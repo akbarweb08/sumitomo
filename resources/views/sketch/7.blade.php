@@ -1,3 +1,9 @@
+@php
+    $Date = date('Y-m-d');
+    $perm = session('role');
+    $newuri = '7';
+@endphp
+
 @extends('layouts.sketch')
 
 @section('title', '07 Warehouse Sketch')
@@ -28,24 +34,26 @@
 
 @section('content')
     <div class="card-body">
-        <h1 style="text-align:center;margin-top: 10px;margin-left: -130px;margin-bottom: -140px;">
-            <b>WAREHOUSE LOT 7</b>
-        </h1>
-        
-        @foreach($lastinfo as $row)
+      @if (!request()->has('type'))
+        <h1 style="text-align:center;margin-top: 10px;margin-left: -130px;margin-bottom: -140px;"><b>WAREHOUSE LOT 7</b></h1>
+      @else
+        <h1 style="text-align:center;margin-top: 10px;margin-left: -130px;margin-bottom: -140px;"><b style="color:red">WAREHOUSE LOT 7 SKETCH</b></h1>
+      @endif
+      
+      @foreach($lastinfo as $row)
         <div>
             <h5 style="margin-top: 70px;margin-left: -10px;margin-bottom: -140px;">Last Change : <b>{{ $row->lastDate }}</b></h5>
         </div>
-        @endforeach
+      @endforeach
     </div>
 
     <div id="kotak">
         @for ($i = 1; $i <= 3; $i++)
-            @php $box = $box_array[$i]; @endphp
-            <div onclick="toggleModal(this)" data-boxnumber='{{ $i }}' 
-                 {!! $box ? 'data-pallets="'.$box['Id'].';'.($box['InvoiceNumber']??'').';'.($box['ColorId']??'').';'.($box['PalletNumber']??'').';'.$box['BoxNumber'].';'.($box['errMsg']??'').';"' . ' data-available="1"' : 'data-available="0"' !!} 
-                 style="cursor: cell; {!! $box ? 'background-color: '.$box['ColorHex'].';color:'.$box['ColorText'] : '' !!}; {!! ($box && isset($box['errMsg']) && $box['errMsg'] != NULL) ? 'border: 5px solid red;' : '' !!}">
-                {{ ($box['Prefiks'] ?? '') . ($box['PalletNumber'] ?? '') }}
+            @php $box = $box_array[$i] ?? null; @endphp
+            <div onclick="toggleModal(this)" data-boxnumber='{{ $i }}' title="{{ $box->InvoiceNumber ?? '' }}"
+                 {!! $box ? 'data-pallets="'.$box->Id.';'.($box->InvoiceNumber??'').';'.($box->ColorId??'').';'.($box->PalletNumber??'').';'.$box->BoxNumber.';'.($box->errMsg??'').';"' . ' data-available="1"' : 'data-available="0"' !!} 
+                 style="cursor: cell; {!! $box ? 'background-color: '.$box->ColorHex.';color:'.$box->ColorText : '' !!}; {!! ($box && isset($box->errMsg) && $box->errMsg != NULL) ? 'border: 5px solid red;' : '' !!}">
+                {{ ($box->Prefiks ?? '') . ($box->PalletNumber ?? '') }}
             </div>
         @endfor
     </div>
@@ -54,11 +62,11 @@
         @php $mark = $i; @endphp
         <div id="kotak{{ $j }}">
             @for ($i = $mark; $i <= $mark + 2; $i++)
-                @php $box = $box_array[$i]; @endphp
-                <div onclick="toggleModal(this)" data-boxnumber='{{ $i }}' 
-                     {!! $box ? 'data-pallets="'.$box['Id'].';'.($box['InvoiceNumber']??'').';'.($box['ColorId']??'').';'.($box['PalletNumber']??'').';'.$box['BoxNumber'].';'.($box['errMsg']??'').';"' . ' data-available="1"' : 'data-available="0"' !!} 
-                     style="cursor: cell; {!! $box ? 'background-color: '.$box['ColorHex'].';color:'.$box['ColorText'] : '' !!}; {!! ($box && isset($box['errMsg']) && $box['errMsg'] != NULL) ? 'border: 5px solid red;' : '' !!}">
-                    {{ ($box['Prefiks'] ?? '') . ($box['PalletNumber'] ?? '') }}
+                @php $box = $box_array[$i] ?? null; @endphp
+                <div onclick="toggleModal(this)" data-boxnumber='{{ $i }}' title="{{ $box->InvoiceNumber ?? '' }}"
+                     {!! $box ? 'data-pallets="'.$box->Id.';'.($box->InvoiceNumber??'').';'.($box->ColorId??'').';'.($box->PalletNumber??'').';'.$box->BoxNumber.';'.($box->errMsg??'').';"' . ' data-available="1"' : 'data-available="0"' !!} 
+                     style="cursor: cell; {!! $box ? 'background-color: '.$box->ColorHex.';color:'.$box->ColorText : '' !!}; {!! ($box && isset($box->errMsg) && $box->errMsg != NULL) ? 'border: 5px solid red;' : '' !!}">
+                    {{ ($box->Prefiks ?? '') . ($box->PalletNumber ?? '') }}
                 </div>
             @endfor
         </div>
@@ -85,11 +93,11 @@
         @php $mark11++; $mark = $i; @endphp
         <div id="kotak{{ $j }}">
             @for ($i = $mark; $i <= $mark + 1; $i++)
-                @php $box = $box_array[$i]; @endphp
-                <div onclick="toggleModal(this)" data-boxnumber='{{ $i }}' 
-                     {!! $box ? 'data-pallets="'.$box['Id'].';'.($box['InvoiceNumber']??'').';'.($box['ColorId']??'').';'.($box['PalletNumber']??'').';'.$box['BoxNumber'].';'.($box['errMsg']??'').';"' . ' data-available="1"' : 'data-available="0"' !!} 
-                     style="cursor: cell; {!! $box ? 'background-color: '.$box['ColorHex'].';color:'.$box['ColorText'] : '' !!}; {!! ($box && isset($box['errMsg']) && $box['errMsg'] != NULL) ? 'border: 5px solid red;' : '' !!}">
-                    {{ ($box['Prefiks'] ?? '') . ($box['PalletNumber'] ?? '') }}
+                @php $box = $box_array[$i] ?? null; @endphp
+                <div onclick="toggleModal(this)" data-boxnumber='{{ $i }}' title="{{ $box->InvoiceNumber ?? '' }}"
+                     {!! $box ? 'data-pallets="'.$box->Id.';'.($box->InvoiceNumber??'').';'.($box->ColorId??'').';'.($box->PalletNumber??'').';'.$box->BoxNumber.';'.($box->errMsg??'').';"' . ' data-available="1"' : 'data-available="0"' !!} 
+                     style="cursor: cell; {!! $box ? 'background-color: '.$box->ColorHex.';color:'.$box->ColorText : '' !!}; {!! ($box && isset($box->errMsg) && $box->errMsg != NULL) ? 'border: 5px solid red;' : '' !!}">
+                    {{ ($box->Prefiks ?? '') . ($box->PalletNumber ?? '') }}
                 </div>
             @endfor
         </div>
@@ -100,7 +108,7 @@
 
     <div id="container">
         <a style="color:black;font-size:16px; cursor:pointer;" onclick="toggleColorInput()">
-            <div id="kotaket" style="border-style: solid; border-width:5px; border-color: black; background-color: grey; color: white">
+            <div id="kotaket" style="border-style: solid; border-width:5px; border-color: black; background-color: grey; color: white; width: 200px;">
                 &nbsp;&nbsp;&nbsp;ADD INVOICE&nbsp;&nbsp;&nbsp;
             </div>
         </a>
@@ -145,9 +153,36 @@
         </div>
     </h6>
 
-<div id="formName" style="bottom: 0; width: 200px; font-size: 17px; margin-left: 1180px; margin-top: 100px;">
-    MC/FORM/012
-</div>
-
-@include('sketch.components.sketchfunction')
+    <div id="formName" style="bottom: 0; width: 200px; font-size: 17px; margin-left: 1180px; margin-top: 100px;">
+        MC/FORM/012
+    </div>
 @endsection
+
+@push('modals')
+  @if (request()->has('color'))
+    @include('sketch.components.sketchcolormode')
+  @endif
+  
+  @if (!request()->has('type') && !request()->has('color'))
+    @include('sketch.components.sketchfunction')
+  @endif
+@endpush
+
+@push('scripts')
+  @if (request()->has('type'))
+    <script type="text/javascript">
+      function toggleModal(event, type = 'input') {
+        var id = "{{ request('id') }}";
+        var type = "{{ request('type') }}";
+        var dataPallets = $(event).attr("data-pallets");
+        var boxNumber = $(event).attr("data-boxnumber");
+        var id2 = '';
+        if (dataPallets) {
+            var splitted = dataPallets.split(';');
+            id2 = splitted[0];
+        }
+        window.location.href = `{{ route('sketch.move') }}?id=${id}&id2=${id2}&type=${type}&box=${boxNumber}`;
+      }
+    </script>
+  @endif
+@endpush

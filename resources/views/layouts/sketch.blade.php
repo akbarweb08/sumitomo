@@ -6,7 +6,9 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>@yield('title', 'Warehouse Sketch')</title>
   <link rel="icon" type="image/png" href="{{ asset('image/login.png') }}" />
+  @if(!isset($lotNumber) || $lotNumber != '7')
   <link rel="stylesheet" href="{{ asset('css/206.css') }}">
+  @endif
   <link rel="stylesheet" href="{{ asset('css/bs.min.css') }}">
   <link rel="stylesheet" href="{{ asset('css/bootstrap.min.css') }}">
   <script src="{{ asset('js/jquery-3.5.1.js') }}"></script>
