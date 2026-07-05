@@ -1,11 +1,33 @@
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+# Sumitomo Warehouse System
+
+Sistem manajemen warehouse untuk PT. Sumitomo Wiring System Batam Indonesia.
+
+## 🚀 Pengaktifan Real-Time Notifikasi (Socket.IO)
+
+Aplikasi ini menggunakan Node.js dan Socket.IO (tanpa Redis) untuk fitur notifikasi *real-time* kepada Driver. Agar notifikasi bekerja dengan baik, **Anda wajib menjalankan server Socket.IO** berdampingan dengan server web Laravel.
+
+### Langkah-langkah Pengaktifan:
+
+1. **Buka Terminal / Command Prompt baru**.
+2. Masuk ke dalam direktori `socket_server` yang ada di dalam root project ini:
+   ```bash
+   cd socket_server
+   ```
+3. Install dependencies Node.js (jika belum):
+   ```bash
+   npm install
+   ```
+4. Jalankan server:
+   ```bash
+   node server.js
+   ```
+   *Anda akan melihat pesan "Socket.IO server listening on port 3000" jika berhasil.*
+5. Biarkan terminal ini tetap terbuka (berjalan di background).
+6. Di terminal lain, Anda bisa menjalankan server Laravel seperti biasa (`php artisan serve` atau melalui XAMPP Apache).
+
+---
 
 ## About Laravel
 

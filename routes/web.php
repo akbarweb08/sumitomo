@@ -50,4 +50,11 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/sketch/saveColor', [\App\Http\Controllers\PalletProcessController::class, 'saveColor'])->name('sketch.saveColor');
     Route::post('/sketch/palletAction', [\App\Http\Controllers\PalletProcessController::class, 'palletAction'])->name('sketch.palletAction');
     Route::get('/sketch/move/proses', [\App\Http\Controllers\PalletProcessController::class, 'prosesDataMove'])->name('sketch.move');
+    
+    // Driver Tasks
+    Route::get('/tugas', [\App\Http\Controllers\DriverTaskController::class, 'index'])->name('tugas.index');
+    Route::get('/admin/tasks', [\App\Http\Controllers\DriverTaskController::class, 'adminIndex'])->name('admin.tasks');
+    Route::get('/fetch-drivers', [\App\Http\Controllers\DriverTaskController::class, 'fetchDrivers'])->name('driver.fetch');
+    Route::post('/assign-driver', [\App\Http\Controllers\DriverTaskController::class, 'assign'])->name('driver.assign');
+    Route::post('/tugas/{id}/complete', [\App\Http\Controllers\DriverTaskController::class, 'complete'])->name('tugas.complete');
 });

@@ -178,6 +178,11 @@
 
             <button type="button" onclick="moveDataa(this)" class="btn btn-info m-1 text-white">Move</button>
 
+            <!-- Assign Driver Button -->
+            @if(session('role') == 'admin' || session('role') == 'superadmin')
+            <button type="button" onclick="openAssignDriverModal()" class="btn btn-warning m-1 text-dark">Assign Driver</button>
+            @endif
+
             <div class="btn-group m-1" role="group">
                 <button type="button" onclick="moveGroupp(this)" class="btn btn-info text-white">Mv. Group</button>
                 <div class="btn-group" role="group">
@@ -212,6 +217,39 @@
 
           </div>
         </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Assign Driver Modal -->
+<div class="modal fade" id="assignDriverModal" tabindex="-1" role="dialog" aria-hidden="true" style="z-index: 1060;">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Assign Driver</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="assignDriverForm">
+            <input type="hidden" name="boxNumber" id="assignBoxNumber">
+            <input type="hidden" name="lotNumber" id="assignLotNumber">
+            
+            <div class="form-group mb-2">
+                <label>Select Driver</label>
+                <select class="form-control" name="driver_id" id="assignDriverId" required>
+                    <option value="">Loading...</option>
+                </select>
+            </div>
+            <div class="form-group mb-2">
+                <label>Notes</label>
+                <textarea class="form-control" name="note" id="assignNote" rows="3" placeholder="Masukkan instruksi..."></textarea>
+            </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+         <button type="button" class="btn btn-primary" onclick="submitAssignDriver()">Assign</button>
       </div>
     </div>
   </div>
@@ -493,6 +531,54 @@
         if(id) {
             window.location.href = window.location.pathname + '?id=' + id + '&type=moveLine';
         }
+    }
+
+    function openAssignDriverModal() {
+        var box = $("#inputBoxNumber").val();
+        var lot = $("#inputLotNumber").val();
+        
+        $("#assignBoxNumber").val(box);
+        $("#assignLotNumber").val(lot);
+        $("#assignNote").val("Tolong periksa box " + box + " di lot " + lot + ".");
+        
+        // Fetch drivers
+        $.get('{{ route("driver.fetch") }}', function(data) {
+            var options = '<option value="">Pilih Driver...</option>';
+            data.forEach(function(driver) {
+                options += '<option value="'+driver.id+'">'+driver.name+' ('+driver.role+')</option>';
+            });
+            $("#assignDriverId").html(options);
+            
+            // hide modal2 temporarily if needed, but easier is just show on top
+            $('#assignDriverModal').modal('show');
+        });
+    }
+
+    function submitAssignDriver() {
+        var driver_id = $("#assignDriverId").val();
+        var note = $("#assignNote").val();
+        
+        if(!driver_id) {
+            Swal.fire('Error', 'Silakan pilih driver terlebih dahulu', 'error');
+            return;
+        }
+        
+        $.ajax({
+            type: "POST",
+            url: '{{ route("driver.assign") }}',
+            data: {
+                _token: '{{ csrf_token() }}',
+                driver_id: driver_id,
+                note: note
+            },
+            success: function(res) {
+                $('#assignDriverModal').modal('hide');
+                Swal.fire('Success', res.message, 'success');
+            },
+            error: function(err) {
+                Swal.fire('Error', 'Gagal assign driver', 'error');
+            }
+        });
     }
 
 </script>

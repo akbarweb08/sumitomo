@@ -247,6 +247,11 @@
       <li><a href="{{ route('home') }}">Home</a></li>
       <li><a href="{{ route('masterdata.index') }}">Master Data</a></li>
       <li><a href="{{ route('datalist.index') }}">Pallet Data</a></li>
+      @if(session('role') == 'admin')
+      <li><a href="{{ route('admin.tasks') }}">Tugas Assigned</a></li>
+      @else
+      <li><a href="{{ route('tugas.index') }}">Tugas</a></li>
+      @endif
       <li>
         <a data-bs-toggle="collapse" href="#sketchCollapse" role="button" aria-expanded="false" aria-controls="sketchCollapse">
           Sketch <span style="float:right;">▼</span>
@@ -323,6 +328,31 @@
         mainContent.classList.toggle('expanded');
       }
     }
+  </script>
+  <!-- Socket.IO Client -->
+  <script src="http://localhost:3000/socket.io/socket.io.js"></script>
+  <script>
+      if (typeof io !== 'undefined') {
+          const socket = io('http://localhost:3000');
+          // Fallback user ID to session or auth if available
+          const userId = "{{ auth()->id() ?? session('user_id') ?? 1 }}"; 
+          socket.on('driver-channel.' + userId, (data) => {
+              if(data.event === 'driver.assigned') {
+                  Swal.fire({
+                      title: 'Tugas Baru!',
+                      text: data.data.task.note,
+                      icon: 'info',
+                      showCancelButton: true,
+                      confirmButtonText: 'Lihat Tugas',
+                      cancelButtonText: 'Tutup'
+                  }).then((result) => {
+                      if(result.isConfirmed) {
+                          window.location.href = "{{ route('tugas.index') }}";
+                      }
+                  });
+              }
+          });
+      }
   </script>
   @stack('scripts')
 </body>
