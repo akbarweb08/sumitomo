@@ -61,6 +61,7 @@
                         @if(session('role') == 'admin')
                         <li><a class="dropdown-item" href="{{ route('masterdata.index') }}">Invoice Data</a></li>
                         <li><a class="dropdown-item" href="{{ route('masterreceipt.index') }}">Receipt Data</a></li>
+                        <li><a class="dropdown-item" href="{{ route('masteruser.index') }}">Master User</a></li>
                         <li><a class="dropdown-item" href="{{ route('admin.tasks') }}">Tugas Assigned (Admin)</a></li>
                         @else
                         <li><a class="dropdown-item" href="{{ route('masterdata.index') }}">Master Data</a></li>

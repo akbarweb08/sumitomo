@@ -21,6 +21,12 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/masterdata', [\App\Http\Controllers\MasterDataController::class, 'store'])->name('masterdata.store');
     Route::post('/masterdata/update', [\App\Http\Controllers\MasterDataController::class, 'update'])->name('masterdata.update');
     Route::delete('/masterdata/{id}', [\App\Http\Controllers\MasterDataController::class, 'destroy'])->name('masterdata.destroy');
+    
+    // Master User
+    Route::get('/masteruser', [\App\Http\Controllers\MasterUserController::class, 'index'])->name('masteruser.index');
+    Route::post('/masteruser', [\App\Http\Controllers\MasterUserController::class, 'store'])->name('masteruser.store');
+    Route::post('/masteruser/update', [\App\Http\Controllers\MasterUserController::class, 'update'])->name('masteruser.update');
+    Route::delete('/masteruser/{id}', [\App\Http\Controllers\MasterUserController::class, 'destroy'])->name('masteruser.destroy');
 
     // Master Receipt
     Route::get('/masterreceipt', [\App\Http\Controllers\MasterReceiptController::class, 'index'])->name('masterreceipt.index');

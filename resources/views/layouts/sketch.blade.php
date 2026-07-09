@@ -246,6 +246,7 @@
     <ul class="sidebar-menu">
       <li><a href="{{ route('home') }}">Home</a></li>
       <li><a href="{{ route('masterdata.index') }}">Master Data</a></li>
+      <li><a href="{{ route('masteruser.index') }}">Master User</a></li>
       <li><a href="{{ route('datalist.index') }}">Pallet Data</a></li>
       @if(session('role') == 'admin')
       <li><a href="{{ route('admin.tasks') }}">Tugas Assigned</a></li>
