@@ -171,6 +171,19 @@
                 </div>
             </div>
 
+            <div class="btn-group m-1" role="group">
+                <button type="button" id="returnModal" onclick="returnData(this)" class="btn btn-warning">Return</button>
+                <div class="btn-group" role="group">
+                    <button id="btnGroupDropReturn" type="button" class="btn btn-warning dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>
+                    <div class="dropdown-menu" aria-labelledby="btnGroupDropReturn">
+                        <a class="dropdown-item" onclick="returnGroup(this)" style="cursor: pointer;">Return Group</a>
+                        <a class="dropdown-item" onclick="returnLine(this)" style="cursor: pointer;">Return Line</a>
+                        <a class="dropdown-item" onclick="returnFront(this)" style="cursor: pointer;">Return Front</a>
+                        <a class="dropdown-item" onclick="returnBack(this)" style="cursor: pointer;">Return Back</a>
+                    </div>
+                </div>
+            </div>
+
             <button type="button" onclick="editData()" class="btn btn-secondary m-1" id="editButtonEdit">Edit</button>
             <button type="button" onclick="submitData()" class="btn btn-primary m-1">Save</button>
 
@@ -505,6 +518,11 @@
     function deleteLine() { doPalletAction('deleteLine'); }
     function deleteFront() { doPalletAction('deleteFront'); }
     function deleteBack() { doPalletAction('deleteBack'); }
+    function returnData() { doPalletAction('return'); }
+    function returnGroup() { doPalletAction('returnGroup'); }
+    function returnLine() { doPalletAction('returnLine'); }
+    function returnFront() { doPalletAction('returnFront'); }
+    function returnBack() { doPalletAction('returnBack'); }
     function groupColorr() { doPalletAction('groupcolor'); }
     function groupToFront() { doPalletAction('groupFront'); }
     function groupToBack() { doPalletAction('groupBack'); }

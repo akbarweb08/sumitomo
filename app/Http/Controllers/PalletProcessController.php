@@ -180,7 +180,111 @@ class PalletProcessController extends Controller
                 DB::commit();
                 return response()->json(['status' => 'success']);
             }
-            
+            if ($type == 'return') {
+                $pallet = Pallet::where('Id', $IdPallet)->first();
+                if ($pallet && $pallet->PalletNumber != '') {
+                    $pallet->update([
+                        'DateOut' => $Date,
+                        'ConfirmOut' => $ConfirmBy
+                    ]);
+                    Pallet::create([
+                        'LotNumber' => $pallet->LotNumber,
+                        'BoxNumber' => $pallet->BoxNumber,
+                        'ColorId' => $pallet->ColorId,
+                        'PalletNumber' => '',
+                        'palletGroup' => $pallet->palletGroup,
+                        'lineGroup' => $pallet->lineGroup,
+                        'ConfirmBy' => '',
+                        'ConfirmOut' => '',
+                        'DateOut' => null
+                    ]);
+                }
+                DB::commit();
+                return response()->json(['status' => 'success']);
+            }
+
+            if ($type == 'returnGroup') {
+                $pallet = Pallet::where('Id', $IdPallet)->first();
+                if ($pallet) {
+                    $box = (int) $pallet->BoxNumber;
+                    $lot = $pallet->LotNumber;
+                    
+                    if ($box >= 196 && $lot == '7') {
+                        $max = 2;
+                        $awal = ($box % $max == 0) ? (intdiv($box, $max) * $max - $max + 2) : (intdiv($box, $max) * $max);
+                    } else {
+                        $max = 3;
+                        $awal = ($box % $max == 0) ? (intdiv($box, $max) * $max - $max + 1) : (intdiv($box, $max) * $max + 1);
+                    }
+                    if ($lot == '242') {
+                        $max = 2;
+                        $awal = ($box % $max != 0) ? (intdiv($box, $max) * $max + 1) : (intdiv($box, $max) * $max - $max + 1);
+                    }
+                    $akhir = $awal + $max - 1;
+
+                    for ($i = $awal; $i <= $akhir; $i++) {
+                        $p = Pallet::where('BoxNumber', $i)->where('LotNumber', $lot)->whereNull('DateOut')->first();
+                        if ($p && $p->PalletNumber != '') {
+                            $p->update([
+                                'DateOut' => $Date,
+                                'ConfirmOut' => $ConfirmBy
+                            ]);
+                            Pallet::create([
+                                'LotNumber' => $lot,
+                                'BoxNumber' => $i,
+                                'ColorId' => 1,
+                                'PalletNumber' => '',
+                                'palletGroup' => $p->palletGroup,
+                                'lineGroup' => $p->lineGroup,
+                                'ConfirmBy' => '',
+                                'ConfirmOut' => '',
+                                'DateOut' => null
+                            ]);
+                        }
+                    }
+                }
+                DB::commit();
+                return response()->json(['status' => 'success']);
+            }
+
+            if (in_array($type, ['returnLine', 'returnFront', 'returnBack'])) {
+                $pallet = Pallet::where('Id', $IdPallet)->first();
+                if ($pallet) {
+                    $query = Pallet::where('lineGroup', $pallet->lineGroup)
+                        ->where('LotNumber', $pallet->LotNumber)
+                        ->whereNull('DateOut');
+                    
+                    if ($type == 'returnFront') {
+                        $query->where('BoxNumber', '>=', $pallet->BoxNumber);
+                    } elseif ($type == 'returnBack') {
+                        $query->where('BoxNumber', '<=', $pallet->BoxNumber);
+                    }
+                    
+                    $palletsInLine = $query->get();
+                    foreach ($palletsInLine as $p) {
+                        if ($p->ColorId == 2) continue;
+                        if ($p->PalletNumber != '') {
+                            $p->update(['DateOut' => $Date, 'ConfirmOut' => $ConfirmBy]);
+                            Pallet::create([
+                                'LotNumber' => $p->LotNumber,
+                                'BoxNumber' => $p->BoxNumber,
+                                'ColorId' => 1,
+                                'PalletNumber' => '',
+                                'palletGroup' => $p->palletGroup,
+                                'lineGroup' => $p->lineGroup,
+                                'ConfirmBy' => '',
+                                'ConfirmOut' => '',
+                                'DateOut' => null
+                            ]);
+                        } else {
+                            $p->update(['ColorId' => 1]);
+                        }
+                    }
+                }
+                DB::commit();
+                return response()->json(['status' => 'success']);
+            }
+
             DB::commit();
             return response()->json(['status' => 'success']);
         } catch (\Exception $e) {
