@@ -141,13 +141,24 @@ class PalletProcessController extends Controller
                           ]);
                 }
 
+                $lineGroup = $backup ? $backup->lineGroup : '';
+                if ($LotNumber == '206') {
+                    $mapFile = base_path('map-206.json');
+                    if (file_exists($mapFile)) {
+                        $mapData = json_decode(file_get_contents($mapFile), true);
+                        if (isset($mapData[(string)$BoxNumber])) {
+                            $lineGroup = $mapData[(string)$BoxNumber];
+                        }
+                    }
+                }
+
                 Pallet::create([
                     'LotNumber' => $LotNumber,
                     'BoxNumber' => $BoxNumber,
                     'ColorId' => $ColorId,
                     'PalletNumber' => $PalletNumber,
                     'palletGroup' => $backup ? $backup->palletGroup : 0,
-                    'lineGroup' => $backup ? $backup->lineGroup : '',
+                    'lineGroup' => $lineGroup,
                     'DateOut' => null,
                     'ConfirmBy' => $ConfirmBy,
                     'ConfirmOut' => '',
@@ -171,11 +182,35 @@ class PalletProcessController extends Controller
             if ($type == 'deleteLine') {
                 $pallet = Pallet::where('Id', $IdPallet)->first();
                 if ($pallet) {
-                    Pallet::where('LotNumber', $pallet->LotNumber)
-                        ->where('lineGroup', $pallet->lineGroup)
+                    $query = Pallet::where('LotNumber', $pallet->LotNumber)
                         ->where('ColorId', '!=', 2)
-                        ->whereNull('DateOut')
-                        ->delete();
+                        ->whereNull('DateOut');
+
+                    if ($pallet->LotNumber == '206') {
+                        $mapFile = base_path('map-206.json');
+                        if (file_exists($mapFile)) {
+                            $mapData = json_decode(file_get_contents($mapFile), true);
+                            $lineGroup = $mapData[(string)$pallet->BoxNumber] ?? null;
+                            if ($lineGroup) {
+                                $boxesInLine = array_keys(array_filter($mapData, function($val) use ($lineGroup) {
+                                    return $val == $lineGroup;
+                                }));
+                                $query->whereIn('BoxNumber', $boxesInLine);
+                            } else {
+                                $query->where('lineGroup', $pallet->lineGroup);
+                            }
+                        } else {
+                            $query->where('lineGroup', $pallet->lineGroup);
+                        }
+                    } else {
+                        if ($pallet->lineGroup == '') {
+                            DB::rollBack();
+                            return response()->json(['status' => 'error', 'message' => 'Line group kosong']);
+                        }
+                        $query->where('lineGroup', $pallet->lineGroup);
+                    }
+
+                    $query->delete();
                 }
                 DB::commit();
                 return response()->json(['status' => 'success']);
@@ -250,9 +285,32 @@ class PalletProcessController extends Controller
             if (in_array($type, ['returnLine', 'returnFront', 'returnBack'])) {
                 $pallet = Pallet::where('Id', $IdPallet)->first();
                 if ($pallet) {
-                    $query = Pallet::where('lineGroup', $pallet->lineGroup)
-                        ->where('LotNumber', $pallet->LotNumber)
+                    $query = Pallet::where('LotNumber', $pallet->LotNumber)
                         ->whereNull('DateOut');
+
+                    if ($pallet->LotNumber == '206') {
+                        $mapFile = base_path('map-206.json');
+                        if (file_exists($mapFile)) {
+                            $mapData = json_decode(file_get_contents($mapFile), true);
+                            $lineGroup = $mapData[(string)$pallet->BoxNumber] ?? null;
+                            if ($lineGroup) {
+                                $boxesInLine = array_keys(array_filter($mapData, function($val) use ($lineGroup) {
+                                    return $val == $lineGroup;
+                                }));
+                                $query->whereIn('BoxNumber', $boxesInLine);
+                            } else {
+                                $query->where('lineGroup', $pallet->lineGroup);
+                            }
+                        } else {
+                            $query->where('lineGroup', $pallet->lineGroup);
+                        }
+                    } else {
+                        if ($pallet->lineGroup == '') {
+                            DB::rollBack();
+                            return response()->json(['status' => 'error', 'message' => 'Line group kosong']);
+                        }
+                        $query->where('lineGroup', $pallet->lineGroup);
+                    }
                     
                     if ($type == 'returnFront') {
                         $query->where('BoxNumber', '>=', $pallet->BoxNumber);
@@ -335,6 +393,15 @@ class PalletProcessController extends Controller
                 } else {
                     $backup = Boxbackup::where('BoxNumber', $boxNumber)->where('LotNumber', $lot)->first();
                     $targetLineGroup = $backup ? $backup->lineGroup : '';
+                    if ($lot == '206') {
+                        $mapFile = base_path('map-206.json');
+                        if (file_exists($mapFile)) {
+                            $mapData = json_decode(file_get_contents($mapFile), true);
+                            if (isset($mapData[(string)$boxNumber])) {
+                                $targetLineGroup = $mapData[(string)$boxNumber];
+                            }
+                        }
+                    }
                     $targetPalletGroup = $backup ? $backup->palletGroup : 0;
                 }
 
