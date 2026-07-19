@@ -55,6 +55,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/sketch/editColor', [\App\Http\Controllers\PalletProcessController::class, 'editColor'])->name('sketch.editColor');
     Route::post('/sketch/saveColor', [\App\Http\Controllers\PalletProcessController::class, 'saveColor'])->name('sketch.saveColor');
     Route::post('/sketch/palletAction', [\App\Http\Controllers\PalletProcessController::class, 'palletAction'])->name('sketch.palletAction');
+    Route::post('/sketch/record', [\App\Http\Controllers\PalletProcessController::class, 'recordData'])->name('sketch.record');
     Route::get('/sketch/move/proses', [\App\Http\Controllers\PalletProcessController::class, 'prosesDataMove'])->name('sketch.move');
     
     // Driver Tasks

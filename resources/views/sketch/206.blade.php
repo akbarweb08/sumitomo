@@ -18,7 +18,12 @@
       
       @foreach ($lastinfo as $row)
         <div>
-          <h5 style="margin-top: 50px;margin-left: ;margin-bottom: -140px;">Last Change : <b>{{ $row->lastDate }} </b></h5>
+          <h5 style="margin-top: 50px;margin-left: ;margin-bottom: -140px;">
+            Last Change : <b>{{ $row->lastDate }} </b>
+            @if(in_array(session('role'), ['206', 'super', 'admin']))
+              <button onclick="recordData('206')" class="btn btn-success" style="margin-left: 20px; padding: 5px 15px; font-weight: bold; border-radius: 5px;">Record Data</button>
+            @endif
+          </h5>
         </div>
       @endforeach
     </div>
@@ -141,4 +146,53 @@
       }
     </script>
   @endif
+
+  <script>
+    function recordData(lotNumber) {
+        Swal.fire({
+            title: 'Konfirmasi',
+            text: "Apakah Anda yakin ingin merekap data pallet hari ini?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Ya, Record!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: "{{ route('sketch.record') }}",
+                    type: 'POST',
+                    data: {
+                        _token: "{{ csrf_token() }}",
+                        LotNumber: lotNumber
+                    },
+                    success: function(response) {
+                        if(response.status == 'success') {
+                            Swal.fire(
+                                'Berhasil!',
+                                response.message,
+                                'success'
+                            ).then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire(
+                                'Gagal!',
+                                response.message,
+                                'error'
+                            );
+                        }
+                    },
+                    error: function(xhr) {
+                        Swal.fire(
+                            'Error!',
+                            'Terjadi kesalahan saat merekap data.',
+                            'error'
+                        );
+                    }
+                });
+            }
+        });
+    }
+  </script>
 @endpush
