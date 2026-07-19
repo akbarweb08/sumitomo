@@ -35,7 +35,10 @@
 @section('content')
     <div class="card-body">
       @if (!request()->has('type'))
-        <h1 style="text-align:center;margin-top: 10px;margin-left: -130px;margin-bottom: -140px;"><b>WAREHOUSE LOT 7</b></h1>
+        <h1 style="text-align:center;margin-top: 10px;margin-left: -130px;margin-bottom: -140px;">
+          <b>WAREHOUSE LOT 7</b>
+          @if(isset($isRecord) && $isRecord) <b style="color:red">{{ $recordDate }}</b> @endif
+        </h1>
       @else
         <h1 style="text-align:center;margin-top: 10px;margin-left: -130px;margin-bottom: -140px;"><b style="color:red">WAREHOUSE LOT 7 SKETCH</b></h1>
       @endif

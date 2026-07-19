@@ -118,7 +118,7 @@
                         <li><a class="dropdown-item" href="#">Comparable Excel Report</a></li>
                         @endif
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="#">Record</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="recordData('{{ request()->route('lot') ?? request()->lot }}'); return false;">Record</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="#">Color Mode</a></li>
                         <li><hr class="dropdown-divider"></li>
@@ -131,7 +131,7 @@
                 </li>
                 
                 <li class="nav-item">
-                    <a class="nav-link pt-1 pb-0" href="#">
+                    <a class="nav-link pt-1 pb-0" href="#" onclick="recordData('{{ request()->route('lot') ?? request()->lot }}'); return false;">
                         <div class="alert alert-success py-1 mb-0" style="height: 35px; font-size: 15px;"><b>Record</b></div>
                     </a>
                 </li>
@@ -169,6 +169,7 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    @include('partials.record_script')
     @stack('scripts')
 </body>
 </html>

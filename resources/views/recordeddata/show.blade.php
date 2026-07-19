@@ -42,7 +42,7 @@
                                     <td>{{ $row->Date }}</td>
                                     <td>{{ $row->exactDate }}</td>
                                     <td>
-                                        <a href="#" class="btn btn-info btn-sm" style="width: 100px;">
+                                        <a href="{{ route('recordeddata.sketch', ['lot' => $lot, 'date' => $row->Date]) }}" class="btn btn-info btn-sm" style="width: 100px;">
                                             View
                                         </a>
                                         @if(session('role') == 'admin')

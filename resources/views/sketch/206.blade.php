@@ -11,7 +11,10 @@
 @section('content')
     <div class="card-body">
       @if (!request()->has('type'))
-        <h1 style="text-align:center;margin-top: 30px;margin-left: 120px;margin-bottom: -140px;"><b>WAREHOUSE LOT 206 </b></h1>
+        <h1 style="text-align:center;margin-top: 30px;margin-left: 120px;margin-bottom: -140px;">
+          <b>WAREHOUSE LOT 206 </b>
+          @if(isset($isRecord) && $isRecord) <b style="color:red">{{ $recordDate }}</b> @endif
+        </h1>
       @else
         <h1 style="text-align:center;margin-top: 30px;margin-left: 120px;margin-bottom: -140px;"><b style="color:red">PINDAH DATA LOT 206 SKETCH</b></h1>
       @endif
@@ -147,52 +150,5 @@
     </script>
   @endif
 
-  <script>
-    function recordData(lotNumber) {
-        Swal.fire({
-            title: 'Konfirmasi',
-            text: "Apakah Anda yakin ingin merekap data pallet hari ini?",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#28a745',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Ya, Record!'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    url: "{{ route('sketch.record') }}",
-                    type: 'POST',
-                    data: {
-                        _token: "{{ csrf_token() }}",
-                        LotNumber: lotNumber
-                    },
-                    success: function(response) {
-                        if(response.status == 'success') {
-                            Swal.fire(
-                                'Berhasil!',
-                                response.message,
-                                'success'
-                            ).then(() => {
-                                location.reload();
-                            });
-                        } else {
-                            Swal.fire(
-                                'Gagal!',
-                                response.message,
-                                'error'
-                            );
-                        }
-                    },
-                    error: function(xhr) {
-                        Swal.fire(
-                            'Error!',
-                            'Terjadi kesalahan saat merekap data.',
-                            'error'
-                        );
-                    }
-                });
-            }
-        });
-    }
-  </script>
+
 @endpush

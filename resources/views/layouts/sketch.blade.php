@@ -268,7 +268,7 @@
           </ul>
         </div>
       </li>
-      @if(isset($lotNumber))
+      @if(isset($lotNumber) && (!isset($isRecord) || !$isRecord))
       <li>
         <a data-bs-toggle="collapse" href="#actionCollapse" role="button" aria-expanded="false" aria-controls="actionCollapse">
           Action <span style="float:right;">▼</span>
@@ -281,7 +281,7 @@
             <li><a href="/exportcompare.php?LotNumber={{ $lotNumber }}">Comparable Excel Report</a></li>
             @endif
             <li><hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.1);"></li>
-            <li><a href="/record.php?LotNumber={{ $lotNumber }}">Record</a></li>
+            <li><a href="#" onclick="recordData('{{ $lotNumber }}'); return false;">Record</a></li>
             <li><hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.1);"></li>
             <li><a href="{{ route('sketch.show', ['lot' => $lotNumber]) }}?color=1&mode=line">Color Mode</a></li>
             <li><hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.1);"></li>
@@ -308,7 +308,7 @@
       </div>
     </div>
     
-    <div class="fullbody">
+    <div class="fullbody" @if(isset($isRecord) && $isRecord) style="pointer-events: none;" @endif>
         @yield('content')
     </div>
   </div> <!-- End Main Content Wrapper -->
@@ -355,6 +355,7 @@
           });
       }
   </script>
+  @include('partials.record_script')
   @stack('scripts')
 </body>
 </html>

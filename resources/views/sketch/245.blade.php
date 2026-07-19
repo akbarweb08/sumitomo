@@ -204,10 +204,11 @@
 @endpush
 
 @section('content')
-<div class="fullbody">
+<div class="fullbody" @if(isset($isRecord) && $isRecord) style="pointer-events: none;" @endif>
     <div class="card-body">
         <h1 style="margin-top: 10px;margin-left: 10px;margin-bottom: -140px;text-align:center">
             <b>WAREHOUSE LOT 245 SKETCH</b>
+            @if(isset($isRecord) && $isRecord) <b style="color:red">{{ $recordDate }}</b> @endif
         </h1>
         
         @foreach($lastinfo as $row)
