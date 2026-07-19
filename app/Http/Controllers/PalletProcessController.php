@@ -142,12 +142,14 @@ class PalletProcessController extends Controller
                 }
 
                 $lineGroup = $backup ? $backup->lineGroup : '';
+                $palletGroup = $backup ? $backup->palletGroup : 0;
                 if ($LotNumber == '206') {
                     $mapFile = base_path('map-206.json');
                     if (file_exists($mapFile)) {
                         $mapData = json_decode(file_get_contents($mapFile), true);
                         if (isset($mapData[(string)$BoxNumber])) {
-                            $lineGroup = $mapData[(string)$BoxNumber];
+                            $lineGroup = $mapData[(string)$BoxNumber]['line'] ?? $lineGroup;
+                            $palletGroup = $mapData[(string)$BoxNumber]['group'] ?? $palletGroup;
                         }
                     }
                 }
@@ -157,7 +159,7 @@ class PalletProcessController extends Controller
                     'BoxNumber' => $BoxNumber,
                     'ColorId' => $ColorId,
                     'PalletNumber' => $PalletNumber,
-                    'palletGroup' => $backup ? $backup->palletGroup : 0,
+                    'palletGroup' => $palletGroup,
                     'lineGroup' => $lineGroup,
                     'DateOut' => null,
                     'ConfirmBy' => $ConfirmBy,
@@ -179,35 +181,80 @@ class PalletProcessController extends Controller
                 return response()->json(['status' => 'success']);
             }
 
-            if ($type == 'deleteLine') {
+            if (in_array($type, ['deleteLine', 'deleteFront', 'deleteBack', 'deleteGroup'])) {
                 $pallet = Pallet::where('Id', $IdPallet)->first();
                 if ($pallet) {
                     $query = Pallet::where('LotNumber', $pallet->LotNumber)
                         ->where('ColorId', '!=', 2)
                         ->whereNull('DateOut');
 
-                    if ($pallet->LotNumber == '206') {
-                        $mapFile = base_path('map-206.json');
-                        if (file_exists($mapFile)) {
-                            $mapData = json_decode(file_get_contents($mapFile), true);
-                            $lineGroup = $mapData[(string)$pallet->BoxNumber] ?? null;
-                            if ($lineGroup) {
-                                $boxesInLine = array_keys(array_filter($mapData, function($val) use ($lineGroup) {
-                                    return $val == $lineGroup;
-                                }));
-                                $query->whereIn('BoxNumber', $boxesInLine);
+                    if ($type == 'deleteGroup') {
+                        $box = (int) $pallet->BoxNumber;
+                        $lot = $pallet->LotNumber;
+                        $awal = 0; $akhir = 0;
+                        if ($lot == '206') {
+                            $mapFile = base_path('map-206.json');
+                            if (file_exists($mapFile)) {
+                                $mapData = json_decode(file_get_contents($mapFile), true);
+                                $mapEntry = $mapData[(string)$box] ?? null;
+                                $palletGroup = $mapEntry['group'] ?? null;
+                                if ($palletGroup) {
+                                    $boxesInGroup = array_keys(array_filter($mapData, function($val) use ($palletGroup) {
+                                        return isset($val['group']) && $val['group'] == $palletGroup;
+                                    }));
+                                    if (!empty($boxesInGroup)) {
+                                        $awal = min($boxesInGroup);
+                                        $akhir = max($boxesInGroup);
+                                    }
+                                }
+                            }
+                        }
+                        if ($awal == 0 || $akhir == 0) {
+                            if ($box >= 196 && $lot == '7') {
+                                $max = 2;
+                                $awal = ($box % $max == 0) ? (intdiv($box, $max) * $max - $max + 2) : (intdiv($box, $max) * $max);
+                            } else {
+                                $max = 3;
+                                $awal = ($box % $max == 0) ? (intdiv($box, $max) * $max - $max + 1) : (intdiv($box, $max) * $max + 1);
+                            }
+                            if ($lot == '242') {
+                                $max = 2;
+                                $awal = ($box % $max != 0) ? (intdiv($box, $max) * $max + 1) : (intdiv($box, $max) * $max - $max + 1);
+                            }
+                            $akhir = $awal + $max - 1;
+                        }
+                        $query->whereBetween('BoxNumber', [$awal, $akhir]);
+                    } else {
+                        if ($pallet->LotNumber == '206') {
+                            $mapFile = base_path('map-206.json');
+                            if (file_exists($mapFile)) {
+                                $mapData = json_decode(file_get_contents($mapFile), true);
+                                $mapEntry = $mapData[(string)$pallet->BoxNumber] ?? null;
+                                $lineGroup = $mapEntry['line'] ?? null;
+                                if ($lineGroup) {
+                                    $boxesInLine = array_keys(array_filter($mapData, function($val) use ($lineGroup) {
+                                        return isset($val['line']) && $val['line'] == $lineGroup;
+                                    }));
+                                    $query->whereIn('BoxNumber', $boxesInLine);
+                                } else {
+                                    $query->where('lineGroup', $pallet->lineGroup);
+                                }
                             } else {
                                 $query->where('lineGroup', $pallet->lineGroup);
                             }
                         } else {
+                            if ($pallet->lineGroup == '') {
+                                DB::rollBack();
+                                return response()->json(['status' => 'error', 'message' => 'Line group kosong']);
+                            }
                             $query->where('lineGroup', $pallet->lineGroup);
                         }
-                    } else {
-                        if ($pallet->lineGroup == '') {
-                            DB::rollBack();
-                            return response()->json(['status' => 'error', 'message' => 'Line group kosong']);
+
+                        if ($type == 'deleteFront') {
+                            $query->where('BoxNumber', '>=', $pallet->BoxNumber);
+                        } elseif ($type == 'deleteBack') {
+                            $query->where('BoxNumber', '<=', $pallet->BoxNumber);
                         }
-                        $query->where('lineGroup', $pallet->lineGroup);
                     }
 
                     $query->delete();
@@ -238,84 +285,79 @@ class PalletProcessController extends Controller
                 return response()->json(['status' => 'success']);
             }
 
-            if ($type == 'returnGroup') {
-                $pallet = Pallet::where('Id', $IdPallet)->first();
-                if ($pallet) {
-                    $box = (int) $pallet->BoxNumber;
-                    $lot = $pallet->LotNumber;
-                    
-                    if ($box >= 196 && $lot == '7') {
-                        $max = 2;
-                        $awal = ($box % $max == 0) ? (intdiv($box, $max) * $max - $max + 2) : (intdiv($box, $max) * $max);
-                    } else {
-                        $max = 3;
-                        $awal = ($box % $max == 0) ? (intdiv($box, $max) * $max - $max + 1) : (intdiv($box, $max) * $max + 1);
-                    }
-                    if ($lot == '242') {
-                        $max = 2;
-                        $awal = ($box % $max != 0) ? (intdiv($box, $max) * $max + 1) : (intdiv($box, $max) * $max - $max + 1);
-                    }
-                    $akhir = $awal + $max - 1;
-
-                    for ($i = $awal; $i <= $akhir; $i++) {
-                        $p = Pallet::where('BoxNumber', $i)->where('LotNumber', $lot)->whereNull('DateOut')->first();
-                        if ($p && $p->PalletNumber != '') {
-                            $p->update([
-                                'DateOut' => $Date,
-                                'ConfirmOut' => $ConfirmBy
-                            ]);
-                            Pallet::create([
-                                'LotNumber' => $lot,
-                                'BoxNumber' => $i,
-                                'ColorId' => 1,
-                                'PalletNumber' => '',
-                                'palletGroup' => $p->palletGroup,
-                                'lineGroup' => $p->lineGroup,
-                                'ConfirmBy' => '',
-                                'ConfirmOut' => '',
-                                'DateOut' => null
-                            ]);
-                        }
-                    }
-                }
-                DB::commit();
-                return response()->json(['status' => 'success']);
-            }
-
-            if (in_array($type, ['returnLine', 'returnFront', 'returnBack'])) {
+            if (in_array($type, ['returnGroup', 'returnLine', 'returnFront', 'returnBack'])) {
                 $pallet = Pallet::where('Id', $IdPallet)->first();
                 if ($pallet) {
                     $query = Pallet::where('LotNumber', $pallet->LotNumber)
                         ->whereNull('DateOut');
 
-                    if ($pallet->LotNumber == '206') {
-                        $mapFile = base_path('map-206.json');
-                        if (file_exists($mapFile)) {
-                            $mapData = json_decode(file_get_contents($mapFile), true);
-                            $lineGroup = $mapData[(string)$pallet->BoxNumber] ?? null;
-                            if ($lineGroup) {
-                                $boxesInLine = array_keys(array_filter($mapData, function($val) use ($lineGroup) {
-                                    return $val == $lineGroup;
-                                }));
-                                $query->whereIn('BoxNumber', $boxesInLine);
+                    if ($type == 'returnGroup') {
+                        $box = (int) $pallet->BoxNumber;
+                        $lot = $pallet->LotNumber;
+                        $awal = 0; $akhir = 0;
+                        if ($lot == '206') {
+                            $mapFile = base_path('map-206.json');
+                            if (file_exists($mapFile)) {
+                                $mapData = json_decode(file_get_contents($mapFile), true);
+                                $mapEntry = $mapData[(string)$box] ?? null;
+                                $palletGroup = $mapEntry['group'] ?? null;
+                                if ($palletGroup) {
+                                    $boxesInGroup = array_keys(array_filter($mapData, function($val) use ($palletGroup) {
+                                        return isset($val['group']) && $val['group'] == $palletGroup;
+                                    }));
+                                    if (!empty($boxesInGroup)) {
+                                        $awal = min($boxesInGroup);
+                                        $akhir = max($boxesInGroup);
+                                    }
+                                }
+                            }
+                        }
+                        if ($awal == 0 || $akhir == 0) {
+                            if ($box >= 196 && $lot == '7') {
+                                $max = 2;
+                                $awal = ($box % $max == 0) ? (intdiv($box, $max) * $max - $max + 2) : (intdiv($box, $max) * $max);
+                            } else {
+                                $max = 3;
+                                $awal = ($box % $max == 0) ? (intdiv($box, $max) * $max - $max + 1) : (intdiv($box, $max) * $max + 1);
+                            }
+                            if ($lot == '242') {
+                                $max = 2;
+                                $awal = ($box % $max != 0) ? (intdiv($box, $max) * $max + 1) : (intdiv($box, $max) * $max - $max + 1);
+                            }
+                            $akhir = $awal + $max - 1;
+                        }
+                        $query->whereBetween('BoxNumber', [$awal, $akhir]);
+                    } else {
+                        if ($pallet->LotNumber == '206') {
+                            $mapFile = base_path('map-206.json');
+                            if (file_exists($mapFile)) {
+                                $mapData = json_decode(file_get_contents($mapFile), true);
+                                $mapEntry = $mapData[(string)$pallet->BoxNumber] ?? null;
+                                $lineGroup = $mapEntry['line'] ?? null;
+                                if ($lineGroup) {
+                                    $boxesInLine = array_keys(array_filter($mapData, function($val) use ($lineGroup) {
+                                        return isset($val['line']) && $val['line'] == $lineGroup;
+                                    }));
+                                    $query->whereIn('BoxNumber', $boxesInLine);
+                                } else {
+                                    $query->where('lineGroup', $pallet->lineGroup);
+                                }
                             } else {
                                 $query->where('lineGroup', $pallet->lineGroup);
                             }
                         } else {
+                            if ($pallet->lineGroup == '') {
+                                DB::rollBack();
+                                return response()->json(['status' => 'error', 'message' => 'Line group kosong']);
+                            }
                             $query->where('lineGroup', $pallet->lineGroup);
                         }
-                    } else {
-                        if ($pallet->lineGroup == '') {
-                            DB::rollBack();
-                            return response()->json(['status' => 'error', 'message' => 'Line group kosong']);
+                        
+                        if ($type == 'returnFront') {
+                            $query->where('BoxNumber', '>=', $pallet->BoxNumber);
+                        } elseif ($type == 'returnBack') {
+                            $query->where('BoxNumber', '<=', $pallet->BoxNumber);
                         }
-                        $query->where('lineGroup', $pallet->lineGroup);
-                    }
-                    
-                    if ($type == 'returnFront') {
-                        $query->where('BoxNumber', '>=', $pallet->BoxNumber);
-                    } elseif ($type == 'returnBack') {
-                        $query->where('BoxNumber', '<=', $pallet->BoxNumber);
                     }
                     
                     $palletsInLine = $query->get();
@@ -338,6 +380,116 @@ class PalletProcessController extends Controller
                             $p->update(['ColorId' => 1]);
                         }
                     }
+                }
+                DB::commit();
+                return response()->json(['status' => 'success']);
+            }
+
+            if (in_array($type, ['groupcolor', 'groupFront', 'groupBack', 'color', 'colorFront', 'colorBack'])) {
+                if ($PalletNumber != '' && $ColorId != '1') {
+                    $check = Pallet::where('PalletNumber', $PalletNumber)
+                        ->where('ColorId', $ColorId)
+                        ->whereNull('DateOut')
+                        ->where('Id', '!=', $IdPallet)
+                        ->first();
+                    if ($check) {
+                        DB::rollBack();
+                        return response()->json(['status' => 'error', 'message' => "Maaf palet {$PalletNumber} sudah ada pada Line {$check->lineGroup}"]);
+                    }
+                }
+
+                $pallet = Pallet::where('Id', $IdPallet)->first();
+                if ($pallet) {
+                    // Update the current pallet's properties before applying ColorId to the group
+                    $pallet->update([
+                        'ColorId' => $ColorId,
+                        'PalletNumber' => $PalletNumber,
+                        'ConfirmBy' => $ConfirmBy,
+                        'DateIn' => ($PalletNumber != '' && $pallet->PalletNumber == '') ? $Date : $pallet->DateIn,
+                        'errMsg' => null
+                    ]);
+
+                    $query = Pallet::where('LotNumber', $pallet->LotNumber)
+                        ->where('ColorId', '!=', 2)
+                        ->whereNull('DateOut');
+
+                    if (in_array($type, ['groupcolor', 'groupFront', 'groupBack'])) {
+                        $box = (int) $pallet->BoxNumber;
+                        $lot = $pallet->LotNumber;
+                        $awal = 0; $akhir = 0;
+                        if ($lot == '206') {
+                            $mapFile = base_path('map-206.json');
+                            if (file_exists($mapFile)) {
+                                $mapData = json_decode(file_get_contents($mapFile), true);
+                                $mapEntry = $mapData[(string)$box] ?? null;
+                                $palletGroup = $mapEntry['group'] ?? null;
+                                if ($palletGroup) {
+                                    $boxesInGroup = array_keys(array_filter($mapData, function($val) use ($palletGroup) {
+                                        return isset($val['group']) && $val['group'] == $palletGroup;
+                                    }));
+                                    if (!empty($boxesInGroup)) {
+                                        $awal = min($boxesInGroup);
+                                        $akhir = max($boxesInGroup);
+                                    }
+                                }
+                            }
+                        }
+                        if ($awal == 0 || $akhir == 0) {
+                            if ($box >= 196 && $lot == '7') {
+                                $max = 2;
+                                $awal = ($box % $max == 0) ? (intdiv($box, $max) * $max - $max + 2) : (intdiv($box, $max) * $max);
+                            } else {
+                                $max = 3;
+                                $awal = ($box % $max == 0) ? (intdiv($box, $max) * $max - $max + 1) : (intdiv($box, $max) * $max + 1);
+                            }
+                            if ($lot == '242') {
+                                $max = 2;
+                                $awal = ($box % $max != 0) ? (intdiv($box, $max) * $max + 1) : (intdiv($box, $max) * $max - $max + 1);
+                            }
+                            $akhir = $awal + $max - 1;
+                        }
+                        
+                        if ($type == 'groupFront') {
+                            $query->whereBetween('BoxNumber', [$pallet->BoxNumber, $akhir]);
+                        } elseif ($type == 'groupBack') {
+                            $query->whereBetween('BoxNumber', [$awal, $pallet->BoxNumber]);
+                        } else {
+                            $query->whereBetween('BoxNumber', [$awal, $akhir]);
+                        }
+                    } else {
+                        if ($pallet->LotNumber == '206') {
+                            $mapFile = base_path('map-206.json');
+                            if (file_exists($mapFile)) {
+                                $mapData = json_decode(file_get_contents($mapFile), true);
+                                $mapEntry = $mapData[(string)$pallet->BoxNumber] ?? null;
+                                $lineGroup = $mapEntry['line'] ?? null;
+                                if ($lineGroup) {
+                                    $boxesInLine = array_keys(array_filter($mapData, function($val) use ($lineGroup) {
+                                        return isset($val['line']) && $val['line'] == $lineGroup;
+                                    }));
+                                    $query->whereIn('BoxNumber', $boxesInLine);
+                                } else {
+                                    $query->where('lineGroup', $pallet->lineGroup);
+                                }
+                            } else {
+                                $query->where('lineGroup', $pallet->lineGroup);
+                            }
+                        } else {
+                            if ($pallet->lineGroup == '') {
+                                DB::rollBack();
+                                return response()->json(['status' => 'error', 'message' => 'Line group kosong']);
+                            }
+                            $query->where('lineGroup', $pallet->lineGroup);
+                        }
+
+                        if ($type == 'colorFront') {
+                            $query->where('BoxNumber', '>=', $pallet->BoxNumber);
+                        } elseif ($type == 'colorBack') {
+                            $query->where('BoxNumber', '<=', $pallet->BoxNumber);
+                        }
+                    }
+
+                    $query->update(['ColorId' => $ColorId]);
                 }
                 DB::commit();
                 return response()->json(['status' => 'success']);
@@ -393,16 +545,17 @@ class PalletProcessController extends Controller
                 } else {
                     $backup = Boxbackup::where('BoxNumber', $boxNumber)->where('LotNumber', $lot)->first();
                     $targetLineGroup = $backup ? $backup->lineGroup : '';
+                    $targetPalletGroup = $backup ? $backup->palletGroup : 0;
                     if ($lot == '206') {
                         $mapFile = base_path('map-206.json');
                         if (file_exists($mapFile)) {
                             $mapData = json_decode(file_get_contents($mapFile), true);
                             if (isset($mapData[(string)$boxNumber])) {
-                                $targetLineGroup = $mapData[(string)$boxNumber];
+                                $targetLineGroup = $mapData[(string)$boxNumber]['line'] ?? $targetLineGroup;
+                                $targetPalletGroup = $mapData[(string)$boxNumber]['group'] ?? $targetPalletGroup;
                             }
                         }
                     }
-                    $targetPalletGroup = $backup ? $backup->palletGroup : 0;
                 }
 
                 Pallet::where('Id', $id)->update([
