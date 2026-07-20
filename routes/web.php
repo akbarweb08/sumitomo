@@ -45,6 +45,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/recordeddata', [\App\Http\Controllers\RecordedDataController::class, 'index'])->name('recordeddata.index');
     Route::get('/recordeddata/show', [\App\Http\Controllers\RecordedDataController::class, 'show'])->name('recordeddata.show');
     Route::get('/recordeddata/sketch/{lot}/{date}', [\App\Http\Controllers\RecordedDataController::class, 'viewRecordSketch'])->name('recordeddata.sketch');
+    Route::delete('/recordeddata/destroy', [\App\Http\Controllers\RecordedDataController::class, 'destroy'])->name('recordeddata.destroy');
     // Box Error & Pallet Error
     Route::get('/boxerror', [\App\Http\Controllers\BoxErrorController::class, 'index'])->name('boxerror.index');
     Route::post('/boxerror/fix', [\App\Http\Controllers\BoxErrorController::class, 'fix'])->name('boxerror.fix');
