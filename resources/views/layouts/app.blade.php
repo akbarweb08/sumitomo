@@ -98,8 +98,6 @@
                         <li><a class="dropdown-item" href="{{ route('sketch.show', ['lot' => 'TURUNAN206']) }}">TURUNAN 206</a></li>
                         <li><a class="dropdown-item" href="{{ route('sketch.show', ['lot' => 'REPACK']) }}">REPACK</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="{{ route('sketch.show', ['lot' => '242']) }}">LOT 242 Mezanine</a></li>
-                        <li><a class="dropdown-item" href="{{ route('sketch.show', ['lot' => '243']) }}">LOT 243</a></li>
                         <li><a class="dropdown-item" href="{{ route('sketch.show', ['lot' => '244']) }}">LOT 244</a></li>
                         <li><a class="dropdown-item" href="{{ route('sketch.show', ['lot' => '245']) }}">LOT 245</a></li>
                     </ul>

@@ -263,8 +263,6 @@
             <li><a href="{{ route('sketch.show', ['lot' => '206']) }}" @if(isset($lotNumber) && $lotNumber == '206') style="color:white; font-weight:bold;" @endif>LOT 206</a></li>
             <li><a href="{{ route('sketch.show', ['lot' => 'TURUNAN206']) }}" @if(isset($lotNumber) && $lotNumber == 'TURUNAN206') style="color:white; font-weight:bold;" @endif>TURUNAN 206</a></li>
             <li><a href="{{ route('sketch.show', ['lot' => 'REPACK']) }}" @if(isset($lotNumber) && $lotNumber == 'REPACK') style="color:white; font-weight:bold;" @endif>REPACK</a></li>
-            <li><a href="{{ route('sketch.show', ['lot' => '242']) }}" @if(isset($lotNumber) && $lotNumber == '242') style="color:white; font-weight:bold;" @endif>LOT 242</a></li>
-            <li><a href="{{ route('sketch.show', ['lot' => '243']) }}" @if(isset($lotNumber) && $lotNumber == '243') style="color:white; font-weight:bold;" @endif>LOT 243</a></li>
           </ul>
         </div>
       </li>

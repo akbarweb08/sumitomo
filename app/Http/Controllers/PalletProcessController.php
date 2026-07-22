@@ -639,47 +639,174 @@ class PalletProcessController extends Controller
             $lot = $source->LotNumber;
             $this->newDate($lot);
 
-            if ($type == 'move') {
-                $target = null;
-                if ($id2) {
-                    $target = Pallet::where('Id', $id2)->first();
-                }
+            if (in_array($type, ['move', 'moveGroup', 'moveLine'])) {
+                $tgtBox = (int) $boxNumber;
+                $srcBox = (int) $source->BoxNumber;
+                
+                $srcBoxes = [];
+                $tgtBoxes = [];
 
-                if ($target) {
-                    if ($target->ColorId == 2) {
-                        DB::rollBack();
-                        return redirect()->route('sketch.show', ['lot' => $lot, 'id' => $id, 'type' => $type])
-                            ->with('error', 'Box Ini Tidak Dapat Diisi');
-                    }
-                    if ($target->PalletNumber != '' && $target->PalletNumber != 'kosong') {
-                        DB::rollBack();
-                        return redirect()->route('sketch.show', ['lot' => $lot, 'id' => $id, 'type' => $type])
-                            ->with('error', 'Box Ini Memiliki Palet');
-                    }
-                    $targetLineGroup = $target->lineGroup;
-                    $targetPalletGroup = $target->palletGroup;
-                    $target->delete();
+                if ($type == 'move') {
+                    $srcBoxes = [$srcBox];
+                    $tgtBoxes = [$tgtBox];
                 } else {
-                    $backup = Boxbackup::where('BoxNumber', $boxNumber)->where('LotNumber', $lot)->first();
-                    $targetLineGroup = $backup ? $backup->lineGroup : '';
-                    $targetPalletGroup = $backup ? $backup->palletGroup : 0;
-                    if ($lot == '206') {
-                        $mapFile = base_path('map-206.json');
-                        if (file_exists($mapFile)) {
-                            $mapData = json_decode(file_get_contents($mapFile), true);
-                            if (isset($mapData[(string)$boxNumber])) {
-                                $targetLineGroup = $mapData[(string)$boxNumber]['line'] ?? $targetLineGroup;
-                                $targetPalletGroup = $mapData[(string)$boxNumber]['group'] ?? $targetPalletGroup;
+                    $srcMapData = [];
+                    if ($lot == '206' && file_exists(base_path('map-206.json'))) {
+                        $srcMapData = json_decode(file_get_contents(base_path('map-206.json')), true);
+                    }
+                    
+                    if ($type == 'moveGroup') {
+                        $awal = 0; $akhir = 0;
+                        if ($lot == '206' && $srcMapData) {
+                            $palletGroup = $srcMapData[(string)$srcBox]['group'] ?? null;
+                            $lineGroup = $srcMapData[(string)$srcBox]['line'] ?? null;
+                            if ($palletGroup && $lineGroup) {
+                                $boxesInGroup = array_keys(array_filter($srcMapData, function($val) use ($palletGroup, $lineGroup) {
+                                    return isset($val['group']) && $val['group'] == $palletGroup && 
+                                           isset($val['line']) && $val['line'] == $lineGroup;
+                                }));
+                                if (!empty($boxesInGroup)) {
+                                    $awal = min($boxesInGroup);
+                                    $akhir = max($boxesInGroup);
+                                }
+                            }
+                        }
+                        if ($awal == 0 || $akhir == 0) {
+                            if ($srcBox >= 196 && $lot == '7') {
+                                $max = 2;
+                                $awal = ($srcBox % $max == 0) ? (intdiv($srcBox, $max) * $max - $max + 2) : (intdiv($srcBox, $max) * $max);
+                            } else {
+                                $max = 3;
+                                $awal = ($srcBox % $max == 0) ? (intdiv($srcBox, $max) * $max - $max + 1) : (intdiv($srcBox, $max) * $max + 1);
+                            }
+                            if ($lot == '242') {
+                                $max = 2;
+                                $awal = ($srcBox % $max != 0) ? (intdiv($srcBox, $max) * $max + 1) : (intdiv($srcBox, $max) * $max - $max + 1);
+                            }
+                            $akhir = $awal + $max - 1;
+                        }
+                        $srcBoxes = range($awal, $akhir);
+                        
+                        $awal = 0; $akhir = 0;
+                        if ($lot == '206' && $srcMapData) {
+                            $palletGroup = $srcMapData[(string)$tgtBox]['group'] ?? null;
+                            $lineGroup = $srcMapData[(string)$tgtBox]['line'] ?? null;
+                            if ($palletGroup && $lineGroup) {
+                                $boxesInGroup = array_keys(array_filter($srcMapData, function($val) use ($palletGroup, $lineGroup) {
+                                    return isset($val['group']) && $val['group'] == $palletGroup && 
+                                           isset($val['line']) && $val['line'] == $lineGroup;
+                                }));
+                                if (!empty($boxesInGroup)) {
+                                    $awal = min($boxesInGroup);
+                                    $akhir = max($boxesInGroup);
+                                }
+                            }
+                        }
+                        if ($awal == 0 || $akhir == 0) {
+                            if ($tgtBox >= 196 && $lot == '7') {
+                                $max = 2;
+                                $awal = ($tgtBox % $max == 0) ? (intdiv($tgtBox, $max) * $max - $max + 2) : (intdiv($tgtBox, $max) * $max);
+                            } else {
+                                $max = 3;
+                                $awal = ($tgtBox % $max == 0) ? (intdiv($tgtBox, $max) * $max - $max + 1) : (intdiv($tgtBox, $max) * $max + 1);
+                            }
+                            if ($lot == '242') {
+                                $max = 2;
+                                $awal = ($tgtBox % $max != 0) ? (intdiv($tgtBox, $max) * $max + 1) : (intdiv($tgtBox, $max) * $max - $max + 1);
+                            }
+                            $akhir = $awal + $max - 1;
+                        }
+                        $tgtBoxes = range($awal, $akhir);
+                    } else if ($type == 'moveLine') {
+                        if ($lot == '206' && $srcMapData) {
+                            $lineGroup = $srcMapData[(string)$srcBox]['line'] ?? null;
+                            if ($lineGroup) {
+                                $srcBoxes = array_keys(array_filter($srcMapData, function($val) use ($lineGroup) {
+                                    return isset($val['line']) && $val['line'] == $lineGroup;
+                                }));
+                            }
+                            $lineGroupTgt = $srcMapData[(string)$tgtBox]['line'] ?? null;
+                            if ($lineGroupTgt) {
+                                $tgtBoxes = array_keys(array_filter($srcMapData, function($val) use ($lineGroupTgt) {
+                                    return isset($val['line']) && $val['line'] == $lineGroupTgt;
+                                }));
+                            }
+                        } else {
+                            if ($source->lineGroup != '') {
+                                $srcBoxes = Boxbackup::where('LotNumber', $lot)->where('lineGroup', $source->lineGroup)->pluck('BoxNumber')->toArray();
+                            }
+                            $tgtBackup = Boxbackup::where('LotNumber', $lot)->where('BoxNumber', $tgtBox)->first();
+                            if ($tgtBackup && $tgtBackup->lineGroup != '') {
+                                $tgtBoxes = Boxbackup::where('LotNumber', $lot)->where('lineGroup', $tgtBackup->lineGroup)->pluck('BoxNumber')->toArray();
+                            }
+                        }
+                    }
+                }
+                
+                sort($srcBoxes, SORT_NUMERIC);
+                sort($tgtBoxes, SORT_NUMERIC);
+                
+                $sourcePallets = Pallet::where('LotNumber', $lot)
+                                       ->whereIn('BoxNumber', $srcBoxes)
+                                       ->whereNull('DateOut')
+                                       ->get();
+
+                foreach ($sourcePallets as $p) {
+                    $idx = array_search($p->BoxNumber, $srcBoxes);
+                    if ($idx !== false && isset($tgtBoxes[$idx])) {
+                        $tBox = $tgtBoxes[$idx];
+                        $targetPallet = Pallet::where('LotNumber', $lot)->where('BoxNumber', $tBox)->whereNull('DateOut')->first();
+                        if ($targetPallet && !in_array($targetPallet->BoxNumber, $srcBoxes)) {
+                            if ($targetPallet->ColorId == 2) {
+                                DB::rollBack();
+                                return redirect()->route('sketch.show', ['lot' => $lot, 'id' => $id, 'type' => $type])
+                                    ->with('error', "Box $tBox Tidak Dapat Diisi");
+                            }
+                            if ($targetPallet->PalletNumber != '' && $targetPallet->PalletNumber != 'kosong') {
+                                DB::rollBack();
+                                return redirect()->route('sketch.show', ['lot' => $lot, 'id' => $id, 'type' => $type])
+                                    ->with('error', "Box $tBox Memiliki Palet");
                             }
                         }
                     }
                 }
 
-                Pallet::where('Id', $id)->update([
-                    'BoxNumber' => $boxNumber,
-                    'lineGroup' => $targetLineGroup,
-                    'palletGroup' => $targetPalletGroup
-                ]);
+                foreach ($sourcePallets as $p) {
+                    $idx = array_search($p->BoxNumber, $srcBoxes);
+                    if ($idx !== false && isset($tgtBoxes[$idx])) {
+                        $tBox = $tgtBoxes[$idx];
+                        Pallet::where('LotNumber', $lot)->where('BoxNumber', $tBox)->whereNotIn('BoxNumber', $srcBoxes)->whereNull('DateOut')->delete();
+                    }
+                }
+
+                $mapDataAll = null;
+                if ($lot == '206' && file_exists(base_path('map-206.json'))) {
+                    $mapDataAll = json_decode(file_get_contents(base_path('map-206.json')), true);
+                }
+
+                foreach ($sourcePallets as $p) {
+                    $idx = array_search($p->BoxNumber, $srcBoxes);
+                    if ($idx !== false && isset($tgtBoxes[$idx])) {
+                        $tBox = $tgtBoxes[$idx];
+                        $pGroup = 0;
+                        $lGroup = '';
+                        if ($lot == '206' && $mapDataAll) {
+                            $pGroup = $mapDataAll[(string)$tBox]['group'] ?? 0;
+                            $lGroup = $mapDataAll[(string)$tBox]['line'] ?? '';
+                        } else {
+                            $backup = Boxbackup::where('LotNumber', $lot)->where('BoxNumber', $tBox)->first();
+                            $pGroup = $backup ? $backup->palletGroup : 0;
+                            $lGroup = $backup ? $backup->lineGroup : '';
+                        }
+                        $p->update(['BoxNumber' => -$tBox, 'lineGroup' => $lGroup, 'palletGroup' => $pGroup]);
+                    }
+                }
+
+                foreach ($sourcePallets as $p) {
+                    if ($p->BoxNumber < 0) {
+                        $p->update(['BoxNumber' => -$p->BoxNumber]);
+                    }
+                }
 
                 DB::commit();
                 return redirect()->route('sketch.show', ['lot' => $lot]);

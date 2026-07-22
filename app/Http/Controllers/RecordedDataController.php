@@ -48,10 +48,14 @@ class RecordedDataController extends Controller
         $box_array = array_fill(1, 1500, null);
 
         // Fetch records and recordcolors for the specific date
-        $pallets = Record::join('recordcolors', 'recordcolors.Id', '=', 'record.ColorId')
+        $pallets = Record::join('recordcolors', function ($join) use ($lotPlace, $date) {
+                $join->on('recordcolors.ColorId', '=', 'record.ColorId')
+                     ->where('recordcolors.LotPlace', $lotPlace)
+                     ->whereRaw('DATE(recordcolors.recordDate) = ?', [$date]);
+            })
             ->where('record.LotNumber', $lot)
             ->where('record.Date', $date)
-            ->select('record.*', 'recordcolors.Id as ColorId', 'recordcolors.InvoiceNumber', 'recordcolors.ColorHex', 'recordcolors.ColorText', 'recordcolors.Prefiks')
+            ->select('record.*', 'recordcolors.ColorId as ColorId', 'recordcolors.InvoiceNumber', 'recordcolors.ColorHex', 'recordcolors.ColorText', 'recordcolors.Prefiks')
             ->get();
 
         $lastInvoice = null;

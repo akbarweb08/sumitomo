@@ -189,42 +189,36 @@
 
             <div class="w-100 mt-2 mb-2"></div>
 
-            <button type="button" onclick="moveDataa(this)" class="btn btn-info m-1 text-white">Move</button>
-
             <!-- Assign Driver Button -->
             @if(session('role') == 'admin' || session('role') == 'superadmin')
             <button type="button" onclick="openAssignDriverModal()" class="btn btn-warning m-1 text-dark">Assign Driver</button>
             @endif
 
             <div class="btn-group m-1" role="group">
-                <button type="button" onclick="moveGroupp(this)" class="btn btn-info text-white">Mv. Group</button>
+                <button type="button" onclick="moveDataa(this)" class="btn btn-info text-white">Move</button>
                 <div class="btn-group" role="group">
                     <button id="btnGroupDropMove" type="button" class="btn btn-info text-white dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>
                     <div class="dropdown-menu" aria-labelledby="btnGroupDropMove">
+                        <a class="dropdown-item" onclick="moveGroupp(this)" style="cursor: pointer;">Move Group</a>
                         <a class="dropdown-item" onclick="moveLinee(this)" style="cursor: pointer;">Move Line</a>
                     </div>
                 </div>
             </div>
 
             <div class="btn-group m-1" role="group">
-                <button type="button" onclick="lineColorr(this)" class="btn btn-success">C. Line</button>
-                <div class="btn-group" role="group">
-                    <button id="btnGroupDropColor" type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>
-                    <div class="dropdown-menu" aria-labelledby="btnGroupDropColor">
-                        <a class="dropdown-item" onclick="colorToFront(this)" style="cursor: pointer;">To Front</a>
-                        <a class="dropdown-item" onclick="colorToBack(this)" style="cursor: pointer;">To Back</a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="btn-group m-1" role="group">
-                <button type="button" onclick="groupColorr(this)" class="btn btn-success">C. Group</button>
-                <div class="btn-group" role="group">
-                    <button id="btnGroupDropGroup" type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>
-                    <div class="dropdown-menu" aria-labelledby="btnGroupDropGroup">
-                        <a class="dropdown-item" onclick="groupToFront(this)" style="cursor: pointer;">To Front</a>
-                        <a class="dropdown-item" onclick="groupToBack(this)" style="cursor: pointer;">To Back</a>
-                    </div>
+                <button id="btnGroupDropColor" type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Color Action
+                </button>
+                <div class="dropdown-menu" aria-labelledby="btnGroupDropColor">
+                    <h6 class="dropdown-header">Line</h6>
+                    <a class="dropdown-item" onclick="lineColorr(this)" style="cursor: pointer;">Color Line</a>
+                    <a class="dropdown-item" onclick="colorToFront(this)" style="cursor: pointer;">To Front</a>
+                    <a class="dropdown-item" onclick="colorToBack(this)" style="cursor: pointer;">To Back</a>
+                    <div class="dropdown-divider"></div>
+                    <h6 class="dropdown-header">Group</h6>
+                    <a class="dropdown-item" onclick="groupColorr(this)" style="cursor: pointer;">Color Group</a>
+                    <a class="dropdown-item" onclick="groupToFront(this)" style="cursor: pointer;">To Front</a>
+                    <a class="dropdown-item" onclick="groupToBack(this)" style="cursor: pointer;">To Back</a>
                 </div>
             </div>
 
