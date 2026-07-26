@@ -48,7 +48,7 @@ class RecordedDataController extends Controller
         $box_array = array_fill(1, 1500, null);
 
         // Fetch records and recordcolors for the specific date
-        $pallets = Record::join('recordcolors', function ($join) use ($lotPlace, $date) {
+        $pallets = Record::leftJoin('recordcolors', function ($join) use ($lotPlace, $date) {
                 $join->on('recordcolors.ColorId', '=', 'record.ColorId')
                      ->where('recordcolors.LotPlace', $lotPlace)
                      ->whereRaw('DATE(recordcolors.recordDate) = ?', [$date]);

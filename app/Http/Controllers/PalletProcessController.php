@@ -831,7 +831,7 @@ class PalletProcessController extends Controller
             }
 
             $lot2 = $lot;
-            if (in_array($lot, ['243', '244', '245'])) {
+            if (in_array($lot, ['243', '244', '245', '242'])) {
                 $lot2 = 'GRACE';
             }
             
@@ -840,12 +840,12 @@ class PalletProcessController extends Controller
 
             // Delete existing recordcolors for today
             Recordcolor::where('LotPlace', $lot2)
-                ->where('recordDate', $shortDate)
+                ->whereDate('recordDate', $shortDate)
                 ->delete();
 
             // Fetch colors that have active pallets and insert into recordcolors
             $colorsWithPallets = Color::where('LotPlace', $lot2)
-                ->whereRaw("(SELECT COUNT(id) FROM pallets WHERE pallets.ColorId = colors.Id AND pallets.DateOut IS NULL AND pallets.PalletNumber != '') != 0")
+                ->whereRaw("(SELECT COUNT(id) FROM pallets WHERE pallets.ColorId = colors.Id AND pallets.DateOut IS NULL AND (pallets.PalletNumber != '' OR pallets.ColorId != 1)) != 0")
                 ->get();
 
             foreach ($colorsWithPallets as $color) {
@@ -871,7 +871,7 @@ class PalletProcessController extends Controller
                 ->whereNull('DateOut')
                 ->where(function ($query) {
                     $query->where('PalletNumber', '!=', '')
-                          ->orWhere('ColorId', 2);
+                          ->orWhere('ColorId', '!=', 1);
                 })
                 ->get();
 
