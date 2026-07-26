@@ -760,12 +760,12 @@ class PalletProcessController extends Controller
                             if ($targetPallet->ColorId == 2) {
                                 DB::rollBack();
                                 return redirect()->route('sketch.show', ['lot' => $lot, 'id' => $id, 'type' => $type])
-                                    ->with('error', "Box $tBox Tidak Dapat Diisi");
+                                    ->with('error', "Move Gagal: Box $tBox adalah jalan dan tidak dapat diisi pallet");
                             }
                             if ($targetPallet->PalletNumber != '' && $targetPallet->PalletNumber != 'kosong') {
                                 DB::rollBack();
                                 return redirect()->route('sketch.show', ['lot' => $lot, 'id' => $id, 'type' => $type])
-                                    ->with('error', "Box $tBox Memiliki Palet");
+                                    ->with('error', "Move Gagal: Box $tBox sudah terisi Pallet No. " . $targetPallet->PalletNumber);
                             }
                         }
                     }
