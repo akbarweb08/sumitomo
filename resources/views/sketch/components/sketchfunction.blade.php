@@ -474,9 +474,23 @@
                     var idPart = parts[0].trim();
                     var nomorPart = parts.slice(1).join('-').trim();
                     
-                    $('#inputColorId').val(idPart).change();
-                    $('#inputPalletNumber').val(nomorPart);
-                    $(this).val('');
+                    // Validasi: cek apakah idPart ada di window.perLotColors
+                    var foundInvoice = window.perLotColors.find(function(c) {
+                        return c.id == idPart; // Menggunakan == karena idPart mungkin string
+                    });
+
+                    if (foundInvoice) {
+                        $('#inputColorId').val(idPart).change();
+                        $('#inputPalletNumber').val(nomorPart);
+                        $(this).val('');
+                    } else {
+                        Swal.fire({
+                            title: 'Akses Ditolak',
+                            text: 'ID Invoice ' + idPart + ' tidak ditemukan di lot ini. Pastikan Anda men-scan QR dari lot yang sesuai.',
+                            icon: 'error'
+                        });
+                        $(this).val(''); // Reset input
+                    }
                 } else {
                     Swal.fire('Error', 'Format barcode tidak valid. Gunakan format ID - Nomor Pallet (contoh: 25 - 001)', 'error');
                 }
@@ -593,4 +607,257 @@
         });
     }
 
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+    window.perLotColors = {!! json_encode($modalColors->map(function($c) {
+        return [
+            'Id' => $c->Id,
+            'Prefiks' => $c->Prefiks,
+            'InvoiceNumber' => $c->InvoiceNumber,
+            'LotPlace' => $c->LotPlace
+        ];
+    })->values()) !!};
+
+    function findMatchingColor(colorList, invInput) {
+        if (!invInput) return null;
+        let target = invInput.toString().trim().toLowerCase();
+        
+        // 1. Direct match with InvoiceNumber
+        let match = colorList.find(c => c.InvoiceNumber && c.InvoiceNumber.toString().trim().toLowerCase() === target);
+        if (match) return match;
+        
+        // 2. Cleaned match (ignoring symbols)
+        let cleanTarget = target.replace(/[^a-z0-9]/g, '');
+        if (cleanTarget) {
+            match = colorList.find(c => {
+                if (!c.InvoiceNumber) return false;
+                let cleanInv = c.InvoiceNumber.toString().trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+                return cleanInv === cleanTarget;
+            });
+            if (match) return match;
+        }
+        
+        // 3. Prefiks + InvoiceNumber combinations
+        match = colorList.find(c => {
+            if (!c.InvoiceNumber) return false;
+            let prefiks = c.Prefiks ? c.Prefiks.toString().trim().toLowerCase() : '';
+            let inv = c.InvoiceNumber.toString().trim().toLowerCase();
+            
+            let combo1 = (prefiks + inv).replace(/[^a-z0-9]/g, '');
+            let combo2 = (prefiks + " " + inv).toLowerCase();
+            let combo3 = (`(${prefiks}) ${inv}`).toLowerCase();
+            
+            return combo1 === cleanTarget || combo2 === target || combo3 === target;
+        });
+        if (match) return match;
+        
+        // 4. Numeric match (e.g. 00123 -> 123)
+        let numTarget = parseInt(target, 10);
+        if (!isNaN(numTarget)) {
+            match = colorList.find(c => {
+                if (!c.InvoiceNumber) return false;
+                let numInv = parseInt(c.InvoiceNumber, 10);
+                return !isNaN(numInv) && numInv === numTarget;
+            });
+        }
+        
+        return match;
+    }
+
+    function showPerLotBatchQRModal() {
+        let lotName = '{{ $lotPlace }}';
+        let htmlContent = `
+            <div id="perlot-qr-container">
+                <div class="mb-3">
+                    <label for="perlot-import-qr" class="form-label text-start d-block" style="font-weight:bold; font-size: 14px;">Import dari CSV / Excel (Lot ${lotName})</label>
+                    <div class="d-flex align-items-center">
+                        <input type="file" id="perlot-import-qr" class="form-control" accept=".csv, .xlsx, .xls">
+                    </div>
+                    <small class="text-muted d-block text-start mt-2">
+                        Format file (2 Kolom):<br>
+                        <b>Kolom A:</b> Invoice Number<br>
+                        <b>Kolom B:</b> Nomor Pallet<br>
+                        <i>Sistem otomatis mencari di dalam Lot ${lotName}</i><br>
+                        <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="downloadPerLotTemplate()"><i class="fas fa-download"></i> Download Template Excel</button>
+                    </small>
+                </div>
+                <div id="perlot-qr-results" class="text-start mt-3" style="max-height: 200px; overflow-y: auto;">
+                </div>
+            </div>
+        `;
+
+        window.downloadPerLotTemplate = function() {
+            let wb = XLSX.utils.book_new();
+            let ws_data = [
+                ["Invoice Number", "Nomor Pallet"],
+                ["INV-12345", "001"],
+                ["INV-12345", "002"]
+            ];
+            let ws = XLSX.utils.aoa_to_sheet(ws_data);
+            XLSX.utils.book_append_sheet(wb, ws, "Template");
+            XLSX.writeFile(wb, "Template_PerLot_Batch_QR.xlsx");
+        };
+
+        Swal.fire({
+            title: 'Batch Print QR (Excel)',
+            html: htmlContent,
+            showCancelButton: true,
+            confirmButtonText: 'Print Batch',
+            cancelButtonText: 'Batal',
+            didOpen: () => {
+                document.getElementById('perlot-import-qr').addEventListener('change', function(e) {
+                    let file = e.target.files[0];
+                    if(!file) return;
+                    
+                    let reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            let data = new Uint8Array(e.target.result);
+                            let workbook = XLSX.read(data, {type: 'array'});
+                            let firstSheetName = workbook.SheetNames[0];
+                            let worksheet = workbook.Sheets[firstSheetName];
+                            let excelData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+                            
+                            let validItems = [];
+                            let errors = [];
+                            
+                            excelData.forEach(function(row, index) {
+                                if(row.length >= 2 && row[0] != null && row[1] != null) {
+                                    let inv = row[0].toString().trim();
+                                    let pallet = row[1].toString().trim();
+                                    
+                                    // Skip header row if detected
+                                    if(index === 0 && inv.toLowerCase().includes('invoice')) {
+                                        return;
+                                    }
+
+                                    if(inv && pallet) {
+                                        let foundColor = findMatchingColor(window.perLotColors, inv);
+                                        if(foundColor) {
+                                            validItems.push({
+                                                id: foundColor.Id,
+                                                prefiks: foundColor.Prefiks,
+                                                invoice: foundColor.InvoiceNumber,
+                                                lot: foundColor.LotPlace,
+                                                pallet: pallet
+                                            });
+                                        } else {
+                                            errors.push(`Baris ${index+1}: Inv ${inv} tidak ditemukan di lot ini.`);
+                                        }
+                                    }
+                                }
+                            });
+                            
+                            window.perLotQrItemsToPrint = validItems;
+                            
+                            let resHtml = `<b>Berhasil dicocokkan: ${validItems.length} Pallet.</b><br>`;
+                            if(errors.length > 0) {
+                                resHtml += `<span class="text-danger">Ada ${errors.length} baris tidak valid/ditemukan.</span><br>`;
+                                resHtml += `<small>` + errors.slice(0, 5).join('<br>') + (errors.length > 5 ? '<br>...' : '') + `</small>`;
+                            }
+                            document.getElementById('perlot-qr-results').innerHTML = resHtml;
+                            
+                        } catch (error) {
+                            document.getElementById('perlot-qr-results').innerHTML = `<span class="text-danger">Gagal membaca file.</span>`;
+                        }
+                    };
+                    reader.readAsArrayBuffer(file);
+                });
+            },
+            preConfirm: () => {
+                if(!window.perLotQrItemsToPrint || window.perLotQrItemsToPrint.length === 0) {
+                    Swal.showValidationMessage('Tidak ada data valid untuk di-print.');
+                    return false;
+                }
+                return window.perLotQrItemsToPrint;
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let items = result.value;
+                printPerLotBatchQR(items);
+            }
+        });
+    }
+
+    function printPerLotBatchQR(items) {
+        let printContent = `
+            <html>
+                <head>
+                    <title>Batch Print QR</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 15px; margin: 0; background: #fff; text-align: center; }
+                        .qr-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: flex-start; }
+                        .qr-card { 
+                            width: calc(33.333% - 10px); 
+                            box-sizing: border-box; 
+                            border: 1px dashed #666; 
+                            border-radius: 6px; 
+                            padding: 10px; 
+                            text-align: center; 
+                            page-break-inside: avoid; 
+                            break-inside: avoid;
+                            margin-bottom: 10px;
+                        }
+                        .qr-card img { width: 150px; height: 150px; margin-bottom: 5px; }
+                        .qr-card h2 { margin: 4px 0; font-size: 16px; font-weight: bold; }
+                        .qr-card p { margin: 2px 0; font-size: 12px; color: #444; }
+                        @media print {
+                            body { padding: 0; }
+                            .qr-card { page-break-inside: avoid; break-inside: avoid; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="qr-grid">
+        `;
+
+        items.forEach(item => {
+            let qrText = item.id + " - " + item.pallet;
+            let qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + encodeURIComponent(qrText);
+            
+            printContent += `
+                <div class="qr-card">
+                    <img src="${qrUrl}" onload="window.qrImagesLoaded = (window.qrImagesLoaded || 0) + 1;">
+                    <h2>${qrText}</h2>
+                    <p>(${item.prefiks}) ${item.invoice} - Pallet: ${item.pallet}</p>
+                </div>
+            `;
+        });
+
+        printContent += `
+                    </div>
+                    <script>
+                        let hasPrinted = false;
+                        function triggerPrint() {
+                            if (hasPrinted) return;
+                            hasPrinted = true;
+                            if (window.checkLoad) clearInterval(window.checkLoad);
+                            if (window.fallbackTimer) clearTimeout(window.fallbackTimer);
+                            window.print();
+                            setTimeout(function() { window.close(); }, 500);
+                        }
+
+                        let totalImages = ${items.length};
+                        window.qrImagesLoaded = 0;
+                        
+                        window.checkLoad = setInterval(function() {
+                            if (window.qrImagesLoaded >= totalImages) {
+                                triggerPrint();
+                            }
+                        }, 200);
+                        
+                        window.fallbackTimer = setTimeout(function() {
+                            triggerPrint();
+                        }, 4000);
+                    <\/script>
+                </body>
+            </html>
+        `;
+
+        let printWin = window.open('', '', 'width=800,height=600');
+        printWin.document.write(printContent);
+        printWin.document.close();
+    }
 </script>

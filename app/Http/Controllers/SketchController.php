@@ -65,7 +65,13 @@ class SketchController extends Controller
         // Modal data (from sketchfunction.php logic)
         $modalColors = Color::select('colors.*', DB::raw("(SELECT COUNT(id) FROM pallets WHERE pallets.ColorId = colors.Id AND pallets.DateOut IS NULL AND pallets.PalletNumber != '') as total"))
             ->where(function($q) use ($lotPlace) {
-                $q->where('LotPlace', $lotPlace)->orWhere('LotPlace', '');
+                if ($lotPlace == 'GRACE') {
+                    $q->whereIn('colors.LotPlace', ['GRACE', '242', '243', '244', '245'])->orWhere('colors.LotPlace', '');
+                } else if ($lotPlace == '206') {
+                    $q->whereIn('colors.LotPlace', ['206', 'TURUNAN206', 'REPACK'])->orWhere('colors.LotPlace', '');
+                } else {
+                    $q->where('colors.LotPlace', $lotPlace)->orWhere('colors.LotPlace', '');
+                }
             })->where('status', '!=', 'deleted')->where('colors.Id', '!=', 1)->orderBy('supply', 'DESC')->get();
 
         $modalSuppliers = Supply::where('Lotplace', $lotPlace)->orderBy('supplier', 'ASC')->get();

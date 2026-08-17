@@ -275,18 +275,12 @@
           <ul style="list-style:none; padding-left: 20px; margin-top: 10px;">
             <li><a href="#" onclick="window.print()">Print Sketch</a></li>
             <li><a href="/exportreport.php?LotNumber={{ $lotNumber }}">Export Excel</a></li>
-            @if(session('role') == 'admin')
-            <li><a href="/exportcompare.php?LotNumber={{ $lotNumber }}">Comparable Excel Report</a></li>
-            @endif
+            <li><a href="#" onclick="showPerLotBatchQRModal()">Batch Print QR (Excel)</a></li>
             <li><hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.1);"></li>
             <li><a href="#" onclick="recordData('{{ $lotNumber }}'); return false;">Record</a></li>
-            <li><hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.1);"></li>
-            <li><a href="{{ route('sketch.show', ['lot' => $lotNumber]) }}?color=1&mode=line">Color Mode</a></li>
-            <li><hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.1);"></li>
-            <li><a href="/actioninvoice.php?lot={{ $lotNumber }}">Delete Unused Invoice</a></li>
             @if(session('role') == 'admin')
+            <li><hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.1);"></li>
             <li><a href="/checkexist.php?LotNumber={{ $lotNumber }}">Check</a></li>
-            <li><a href="/checkexist.php?LotNumber={{ $lotNumber }}&erase=yes">Erase Check</a></li>
             @endif
           </ul>
         </div>

@@ -178,9 +178,7 @@
                         <li><a href="{{ route('sketch.show', ['lot' => '206']) }}">LOT 206</a></li>
                         <li><a href="{{ route('sketch.show', ['lot' => 'TURUNAN206']) }}">TURUNAN 206</a></li>
                         <li><a href="{{ route('sketch.show', ['lot' => 'REPACK']) }}">REPACK</a></li>
-                        <li><hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.1);"></li>
-                        <li><a href="{{ route('sketch.show', ['lot' => '244']) }}">LOT 244</a></li>
-                        <li><a href="{{ route('sketch.show', ['lot' => '245']) }}">LOT 245</a></li>
+
                     </ul>
                 </div>
             </li>
@@ -195,18 +193,11 @@
                     <ul style="list-style:none; padding-left: 20px; margin-top: 10px;">
                         <li><a href="#" onclick="window.print()">Print Sketch</a></li>
                         <li><a href="#">Export Excel</a></li>
-                        @if(session('role') == 'admin')
-                        <li><a href="#">Comparable Excel Report</a></li>
-                        @endif
                         <li><hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.1);"></li>
                         <li><a href="#" onclick="recordData('{{ request()->route('lot') ?? request()->lot }}'); return false;">Record</a></li>
-                        <li><hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.1);"></li>
-                        <li><a href="#">Color Mode</a></li>
-                        <li><hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.1);"></li>
-                        <li><a href="#">Delete Unused Invoice</a></li>
                         @if(session('role') == 'admin')
+                        <li><hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.1);"></li>
                         <li><a href="#">Check</a></li>
-                        <li><a href="#">Erase Check</a></li>
                         @endif
                     </ul>
                 </div>

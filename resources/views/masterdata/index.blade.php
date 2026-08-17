@@ -24,6 +24,7 @@
                     <a href="{{ route('mastersupplier.index') }}" class="btn btn-secondary me-2">Supplier</a>
                 </div>
                 <div>
+                    <button type="button" class="btn btn-primary me-2 text-white" onclick="showGlobalBatchQRModal()"><i class="fas fa-qrcode"></i> Global Batch QR</button>
                     <button type="button" class="btn btn-info me-2 text-white" onclick="toggleAdd()">Add New</button>
                     <a href="#" class="btn btn-danger">Deleted Data</a>
                 </div>
@@ -250,6 +251,17 @@
 @endsection
 
 @push('scripts')
+<script>
+    window.allMasterDataColors = {!! json_encode(collect($colors)->merge($colorsOther ?? [])->map(function($c) {
+        return [
+            'Id' => $c->Id,
+            'Prefiks' => $c->Prefiks,
+            'InvoiceNumber' => $c->InvoiceNumber,
+            'LotPlace' => $c->LotPlace
+        ];
+    })->values()) !!};
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
 <script>
@@ -339,12 +351,78 @@
 
         let htmlContent = `
             <div id="qr-input-container">
+                <div class="mb-3">
+                    <label for="import-qr-file" class="form-label text-start d-block" style="font-weight:bold; font-size: 14px;">Import dari CSV / Excel</label>
+                    <div class="d-flex align-items-center">
+                        <input type="file" id="import-qr-file" class="form-control" accept=".csv, .xlsx, .xls">
+                        <button class="btn btn-info ms-2 text-white" type="button" onclick="processImportQR()"><i class="fas fa-file-import"></i> Import</button>
+                    </div>
+                    <small class="text-muted d-block text-start mt-1">Pastikan data nomor pallet ada di <b>kolom pertama (Kolom A)</b>.</small>
+                </div>
+                <hr>
                 <div class="input-group mb-2 qr-input-row">
                     <input type="text" class="form-control qr-pallet-input" placeholder="Nomor Pallet (contoh: 001)">
                     <button class="btn btn-success" type="button" onclick="addQrInputRow()"><i class="fas fa-plus"></i></button>
                 </div>
             </div>
         `;
+
+        window.processImportQR = function() {
+            let fileInput = document.getElementById('import-qr-file');
+            if(!fileInput.files.length) {
+                Swal.showValidationMessage('Pilih file terlebih dahulu');
+                return;
+            }
+            let file = fileInput.files[0];
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    let data = new Uint8Array(e.target.result);
+                    let workbook = XLSX.read(data, {type: 'array'});
+                    let firstSheetName = workbook.SheetNames[0];
+                    let worksheet = workbook.Sheets[firstSheetName];
+                    let excelData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+                    
+                    $('#qr-input-container .qr-input-row').remove();
+
+                    let added = 0;
+                    excelData.forEach(function(row) {
+                        if(row.length > 0 && row[0] != null) {
+                            let val = row[0].toString().trim();
+                            if(val) {
+                                let rowHtml = \`
+                                    <div class="input-group mb-2 qr-input-row">
+                                        <input type="text" class="form-control qr-pallet-input" value="\${val}">
+                                        <button class="btn btn-danger" type="button" onclick="this.parentElement.remove()"><i class="fas fa-minus"></i></button>
+                                    </div>
+                                \`;
+                                $('#qr-input-container').append(rowHtml);
+                                added++;
+                            }
+                        }
+                    });
+                    
+                    let addRowHtml = \`
+                        <div class="input-group mb-2 qr-input-row">
+                            <input type="text" class="form-control qr-pallet-input" placeholder="Nomor Pallet">
+                            <button class="btn btn-success" type="button" onclick="addQrInputRow()"><i class="fas fa-plus"></i></button>
+                        </div>
+                    \`;
+                    $('#qr-input-container').append(addRowHtml);
+                    
+                    if(added > 0) {
+                        Swal.resetValidationMessage();
+                        // Reset file input
+                        fileInput.value = '';
+                    } else {
+                        Swal.showValidationMessage('Tidak ada data yang ditemukan di kolom pertama.');
+                    }
+                } catch (error) {
+                    Swal.showValidationMessage('Gagal membaca file. Pastikan format benar.');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        };
 
         window.addQrInputRow = function() {
             let rowHtml = `
@@ -391,58 +469,260 @@
                 <head>
                     <title>Batch Print QR</title>
                     <style>
-                        body { text-align: center; font-family: sans-serif; padding: 0; margin: 0; }
-                        .qr-page { 
-                            page-break-after: always; 
-                            display: flex;
-                            flex-direction: column;
-                            align-items: center;
-                            justify-content: center;
-                            height: 100vh;
+                        body { font-family: Arial, sans-serif; padding: 15px; margin: 0; background: #fff; text-align: center; }
+                        .qr-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: flex-start; }
+                        .qr-card { 
+                            width: calc(33.333% - 10px); 
+                            box-sizing: border-box; 
+                            border: 1px dashed #666; 
+                            border-radius: 6px; 
+                            padding: 10px; 
+                            text-align: center; 
+                            page-break-inside: avoid; 
+                            break-inside: avoid;
+                            margin-bottom: 10px;
                         }
-                        img { width: 250px; height: 250px; margin-bottom: 15px; border: 1px solid #ddd; padding: 10px; }
-                        h1 { margin: 10px 0 5px 0; font-size: 24px; }
-                        p { margin: 0; font-size: 18px; color: #555; }
+                        .qr-card img { width: 150px; height: 150px; margin-bottom: 5px; }
+                        .qr-card h2 { margin: 4px 0; font-size: 16px; font-weight: bold; }
+                        .qr-card p { margin: 2px 0; font-size: 12px; color: #444; }
                         @media print {
-                            .qr-page { height: 100vh; }
+                            body { padding: 0; }
+                            .qr-card { page-break-inside: avoid; break-inside: avoid; }
                         }
                     </style>
                 </head>
                 <body>
+                    <div class="qr-grid">
         `;
 
         pallets.forEach(nomor => {
             let qrText = id + " - " + nomor;
-            let qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" + encodeURIComponent(qrText);
+            let qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + encodeURIComponent(qrText);
             
             printContent += `
-                <div class="qr-page">
+                <div class="qr-card">
                     <img src="${qrUrl}" onload="window.qrImagesLoaded = (window.qrImagesLoaded || 0) + 1;">
-                    <h1>${qrText}</h1>
+                    <h2>${qrText}</h2>
                     <p>(${prefiks}) ${invoice} - Pallet: ${nomor}</p>
                 </div>
             `;
         });
 
         printContent += `
+                    </div>
                     <script>
-                        // Wait for images to load before printing
+                        let hasPrinted = false;
+                        function triggerPrint() {
+                            if (hasPrinted) return;
+                            hasPrinted = true;
+                            if (window.checkLoad) clearInterval(window.checkLoad);
+                            if (window.fallbackTimer) clearTimeout(window.fallbackTimer);
+                            window.print();
+                            setTimeout(function() { window.close(); }, 500);
+                        }
+
                         let totalImages = ${pallets.length};
                         window.qrImagesLoaded = 0;
-                        let checkLoad = setInterval(function() {
+                        
+                        window.checkLoad = setInterval(function() {
                             if (window.qrImagesLoaded >= totalImages) {
-                                clearInterval(checkLoad);
-                                window.print();
-                                setTimeout(function(){ window.close(); }, 500);
+                                triggerPrint();
                             }
                         }, 200);
                         
-                        // Fallback in case image load fails
-                        setTimeout(function() {
-                            clearInterval(checkLoad);
+                        window.fallbackTimer = setTimeout(function() {
+                            triggerPrint();
+                        }, 4000);
+                    <\/script>
+                </body>
+            </html>
+        `;
+
+        let printWin = window.open('', '', 'width=800,height=600');
+        printWin.document.write(printContent);
+        printWin.document.close();
+    }
+
+    function showGlobalBatchQRModal() {
+        let htmlContent = `
+            <div id="global-qr-container">
+                <div class="mb-3">
+                    <label for="global-import-qr" class="form-label text-start d-block" style="font-weight:bold; font-size: 14px;">Import dari CSV / Excel (Global)</label>
+                    <div class="d-flex align-items-center">
+                        <input type="file" id="global-import-qr" class="form-control" accept=".csv, .xlsx, .xls">
+                    </div>
+                    <small class="text-muted d-block text-start mt-2">
+                        Format file (3 Kolom):<br>
+                        <b>Kolom A:</b> Lot Place (Contoh: 7, 206, GRACE)<br>
+                        <b>Kolom B:</b> Invoice Number<br>
+                        <b>Kolom C:</b> Nomor Pallet<br>
+                        <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="downloadGlobalTemplate()"><i class="fas fa-download"></i> Download Template Excel</button>
+                    </small>
+                </div>
+                <div id="global-qr-results" class="text-start mt-3" style="max-height: 200px; overflow-y: auto;">
+                </div>
+            </div>
+        `;
+
+        window.downloadGlobalTemplate = function() {
+            let wb = XLSX.utils.book_new();
+            let ws_data = [
+                ["Lot Place", "Invoice Number", "Nomor Pallet"],
+                ["7", "INV-12345", "001"],
+                ["206", "INV-67890", "002"]
+            ];
+            let ws = XLSX.utils.aoa_to_sheet(ws_data);
+            XLSX.utils.book_append_sheet(wb, ws, "Template");
+            XLSX.writeFile(wb, "Template_Global_Batch_QR.xlsx");
+        };
+
+        Swal.fire({
+            title: 'Global Batch Print QR',
+            html: htmlContent,
+            showCancelButton: true,
+            confirmButtonText: 'Print Batch',
+            cancelButtonText: 'Batal',
+            didOpen: () => {
+                document.getElementById('global-import-qr').addEventListener('change', function(e) {
+                    let file = e.target.files[0];
+                    if(!file) return;
+                    
+                    let reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            let data = new Uint8Array(e.target.result);
+                            let workbook = XLSX.read(data, {type: 'array'});
+                            let firstSheetName = workbook.SheetNames[0];
+                            let worksheet = workbook.Sheets[firstSheetName];
+                            let excelData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+                            
+                            let validItems = [];
+                            let errors = [];
+                            
+                            excelData.forEach(function(row, index) {
+                                if(row.length >= 3 && row[0] != null && row[1] != null && row[2] != null) {
+                                    let lot = row[0].toString().trim();
+                                    let inv = row[1].toString().trim();
+                                    let pallet = row[2].toString().trim();
+                                    
+                                    if(lot && inv && pallet) {
+                                        let foundColor = window.allMasterDataColors.find(c => c.LotPlace == lot && c.InvoiceNumber == inv);
+                                        if(foundColor) {
+                                            validItems.push({
+                                                id: foundColor.Id,
+                                                prefiks: foundColor.Prefiks,
+                                                invoice: foundColor.InvoiceNumber,
+                                                lot: foundColor.LotPlace,
+                                                pallet: pallet
+                                            });
+                                        } else {
+                                            errors.push(`Baris ${index+1}: Lot ${lot}, Inv ${inv} tidak ditemukan.`);
+                                        }
+                                    }
+                                }
+                            });
+                            
+                            window.globalQrItemsToPrint = validItems;
+                            
+                            let resHtml = `<b>Berhasil dicocokkan: ${validItems.length} Pallet.</b><br>`;
+                            if(errors.length > 0) {
+                                resHtml += `<span class="text-danger">Ada ${errors.length} baris tidak valid/ditemukan.</span><br>`;
+                                resHtml += `<small>` + errors.slice(0, 5).join('<br>') + (errors.length > 5 ? '<br>...' : '') + `</small>`;
+                            }
+                            document.getElementById('global-qr-results').innerHTML = resHtml;
+                            
+                        } catch (error) {
+                            document.getElementById('global-qr-results').innerHTML = `<span class="text-danger">Gagal membaca file.</span>`;
+                        }
+                    };
+                    reader.readAsArrayBuffer(file);
+                });
+            },
+            preConfirm: () => {
+                if(!window.globalQrItemsToPrint || window.globalQrItemsToPrint.length === 0) {
+                    Swal.showValidationMessage('Tidak ada data valid untuk di-print.');
+                    return false;
+                }
+                return window.globalQrItemsToPrint;
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let items = result.value;
+                printGlobalBatchQR(items);
+            }
+        });
+    }
+
+    function printGlobalBatchQR(items) {
+        let printContent = `
+            <html>
+                <head>
+                    <title>Global Batch Print QR</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 15px; margin: 0; background: #fff; text-align: center; }
+                        .qr-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: flex-start; }
+                        .qr-card { 
+                            width: calc(33.333% - 10px); 
+                            box-sizing: border-box; 
+                            border: 1px dashed #666; 
+                            border-radius: 6px; 
+                            padding: 10px; 
+                            text-align: center; 
+                            page-break-inside: avoid; 
+                            break-inside: avoid;
+                            margin-bottom: 10px;
+                        }
+                        .qr-card img { width: 150px; height: 150px; margin-bottom: 5px; }
+                        .qr-card h2 { margin: 4px 0; font-size: 16px; font-weight: bold; }
+                        .qr-card p { margin: 2px 0; font-size: 12px; color: #444; }
+                        @media print {
+                            body { padding: 0; }
+                            .qr-card { page-break-inside: avoid; break-inside: avoid; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="qr-grid">
+        `;
+
+        items.forEach(item => {
+            let qrText = item.id + " - " + item.pallet;
+            let qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + encodeURIComponent(qrText);
+            
+            printContent += `
+                <div class="qr-card">
+                    <img src="${qrUrl}" onload="window.qrImagesLoaded = (window.qrImagesLoaded || 0) + 1;">
+                    <h2>${qrText}</h2>
+                    <p>(${item.prefiks}) ${item.invoice} - Pallet: ${item.pallet}</p>
+                </div>
+            `;
+        });
+
+        printContent += `
+                    </div>
+                    <script>
+                        let hasPrinted = false;
+                        function triggerPrint() {
+                            if (hasPrinted) return;
+                            hasPrinted = true;
+                            if (window.checkLoad) clearInterval(window.checkLoad);
+                            if (window.fallbackTimer) clearTimeout(window.fallbackTimer);
                             window.print();
-                            setTimeout(function(){ window.close(); }, 500);
-                        }, 5000);
+                            setTimeout(function() { window.close(); }, 500);
+                        }
+
+                        let totalImages = ${items.length};
+                        window.qrImagesLoaded = 0;
+                        
+                        window.checkLoad = setInterval(function() {
+                            if (window.qrImagesLoaded >= totalImages) {
+                                triggerPrint();
+                            }
+                        }, 200);
+                        
+                        window.fallbackTimer = setTimeout(function() {
+                            triggerPrint();
+                        }, 4000);
                     <\/script>
                 </body>
             </html>
