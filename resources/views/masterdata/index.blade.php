@@ -390,24 +390,24 @@
                         if(row.length > 0 && row[0] != null) {
                             let val = row[0].toString().trim();
                             if(val) {
-                                let rowHtml = \`
+                                let rowHtml = `
                                     <div class="input-group mb-2 qr-input-row">
-                                        <input type="text" class="form-control qr-pallet-input" value="\${val}">
+                                        <input type="text" class="form-control qr-pallet-input" value="${val}">
                                         <button class="btn btn-danger" type="button" onclick="this.parentElement.remove()"><i class="fas fa-minus"></i></button>
                                     </div>
-                                \`;
+                                `;
                                 $('#qr-input-container').append(rowHtml);
                                 added++;
                             }
                         }
                     });
                     
-                    let addRowHtml = \`
+                    let addRowHtml = `
                         <div class="input-group mb-2 qr-input-row">
                             <input type="text" class="form-control qr-pallet-input" placeholder="Nomor Pallet">
                             <button class="btn btn-success" type="button" onclick="addQrInputRow()"><i class="fas fa-plus"></i></button>
                         </div>
-                    \`;
+                    `;
                     $('#qr-input-container').append(addRowHtml);
                     
                     if(added > 0) {
