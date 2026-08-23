@@ -1,4 +1,10 @@
-@extends('layouts.app')
+@php
+    $Date = date('Y-m-d');
+    $perm = session('role');
+    $newuri = 'REPACK';
+@endphp
+
+@extends('layouts.sketch')
 
 @section('title', 'REPACK Warehouse Sketch')
 
@@ -89,7 +95,7 @@
     </div>
     
     <div id="container" style="margin-top: 5px; position: absolute; margin-left: 530px;">
-        @foreach($suppliers as $sup)
+        @foreach($supplies as $sup)
             @php 
                 $supNm = $sup->supplier; 
                 $colors = $colors_by_supplier[$sup->id] ?? [];
@@ -109,5 +115,33 @@
 
 </div>
 
-@include('sketch.components.sketchfunction')
 @endsection
+
+@push('modals')
+  @if (request()->has('color'))
+    @include('sketch.components.sketchcolormode')
+  @endif
+  
+  @if (!request()->has('type') && !request()->has('color'))
+    @include('sketch.components.sketchfunction')
+  @endif
+@endpush
+
+@push('scripts')
+  @if (request()->has('type'))
+    <script type="text/javascript">
+      function toggleModal(event, type = 'input') {
+        var id = "{{ request('id') }}";
+        var type = "{{ request('type') }}";
+        var dataPallets = $(event).attr("data-pallets");
+        var boxNumber = $(event).attr("data-boxnumber");
+        var id2 = '';
+        if (dataPallets) {
+            var splitted = dataPallets.split(';');
+            id2 = splitted[0];
+        }
+        window.location.href = `{{ route('sketch.move') }}?id=${id}&id2=${id2}&type=${type}&box=${boxNumber}`;
+      }
+    </script>
+  @endif
+@endpush

@@ -125,113 +125,51 @@
             <b>Sumitomo WH</b>
             <button class="toggle-btn" onclick="toggleSidebar()" style="margin-left: auto; color: white; border: none; font-size: 24px;">&times;</button>
         </div>
-        <ul class="sidebar-menu">
-            <li><a href="{{ route('home') }}">Home</a></li>
-            
-            <!-- Master Data -->
-            <li>
-                <a data-bs-toggle="collapse" href="#masterDataCollapse" role="button" aria-expanded="false" aria-controls="masterDataCollapse">
-                    Master Data <span style="float:right;">▼</span>
-                </a>
-                <div class="collapse" id="masterDataCollapse">
-                    <ul style="list-style:none; padding-left: 20px; margin-top: 10px;">
-                        @if(session('role') == 'admin')
-                        <li><a href="{{ route('masterdata.index') }}">Invoice Data</a></li>
-                        <li><a href="{{ route('masterreceipt.index') }}">Receipt Data</a></li>
-                        <li><a href="{{ route('masteruser.index') }}">Master User</a></li>
-                        <li><a href="{{ route('admin.tasks') }}">Tugas Assigned</a></li>
-                        @else
-                        <li><a href="{{ route('masterdata.index') }}">Master Data</a></li>
-                        <li><a href="{{ route('tugas.index') }}">Daftar Tugas</a></li>
-                        @endif
-                    </ul>
-                </div>
-            </li>
-
-            <!-- Pallet Data -->
-            <li>
-                <a data-bs-toggle="collapse" href="#palletDataCollapse" role="button" aria-expanded="false" aria-controls="palletDataCollapse">
-                    Pallet Data <span style="float:right;">▼</span>
-                </a>
-                <div class="collapse" id="palletDataCollapse">
-                    <ul style="list-style:none; padding-left: 20px; margin-top: 10px;">
-                        <li><a href="{{ route('datalist.index') }}">Data List</a></li>
-                        <li><a href="{{ route('reporting.index') }}">Reporting</a></li>
-                        <li><hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.1);"></li>
-                        <li><a href="{{ route('recordeddata.index') }}">Recorded Data</a></li>
-                        <li><hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.1);"></li>
-                        <li><a href="{{ route('boxerror.index') }}">Box Error</a></li>
-                        <li><a href="{{ route('palleterror.index') }}">Pallet Error</a></li>
-                    </ul>
-                </div>
-            </li>
-
-            <!-- Sketch -->
-            <li>
-                <a data-bs-toggle="collapse" href="#sketchCollapse" role="button" aria-expanded="false" aria-controls="sketchCollapse">
-                    Sketch <span style="float:right;">▼</span>
-                </a>
-                <div class="collapse" id="sketchCollapse">
-                    <ul style="list-style:none; padding-left: 20px; margin-top: 10px;">
-                        <li><a href="{{ route('sketch.show', ['lot' => '7']) }}">LOT 7</a></li>
-                        <li><hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.1);"></li>
-                        <li><a href="{{ route('sketch.show', ['lot' => '206']) }}">LOT 206</a></li>
-                        <li><a href="{{ route('sketch.show', ['lot' => 'TURUNAN206']) }}">TURUNAN 206</a></li>
-                        <li><a href="{{ route('sketch.show', ['lot' => 'REPACK']) }}">REPACK</a></li>
-
-                    </ul>
-                </div>
-            </li>
-
-            <!-- Action (Only for sketch pages) -->
-            @if(request()->is('sketch/*'))
-            <li>
-                <a data-bs-toggle="collapse" href="#actionCollapse" role="button" aria-expanded="false" aria-controls="actionCollapse">
-                    Action <span style="float:right;">▼</span>
-                </a>
-                <div class="collapse" id="actionCollapse">
-                    <ul style="list-style:none; padding-left: 20px; margin-top: 10px;">
-                        <li><a href="#" onclick="window.print()">Print Sketch</a></li>
-                        <li><a href="#">Export Excel</a></li>
-                        <li><hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.1);"></li>
-                        <li><a href="#" onclick="recordData('{{ request()->route('lot') ?? request()->lot }}'); return false;">Record</a></li>
-                        @if(session('role') == 'admin')
-                        <li><hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.1);"></li>
-                        <li><a href="#">Check</a></li>
-                        @endif
-                    </ul>
-                </div>
-            </li>
-            <li>
-                <a href="#" onclick="recordData('{{ request()->route('lot') ?? request()->lot }}'); return false;" style="padding: 10px 20px;">
-                    <div class="alert alert-success py-1 mb-0" style="font-size: 15px; text-align: center;"><b>Record</b></div>
-                </a>
-            </li>
+    <ul class="sidebar-menu">
+      <li><a href="{{ route('home') }}">Home</a></li>
+      <li><a href="{{ route('masterdata.index') }}">Master Data</a></li>
+      <li><a href="{{ route('masteruser.index') }}">Master User</a></li>
+      <li><a href="{{ route('datalist.index') }}">Pallet Data</a></li>
+      @if(session('role') == 'admin')
+      <li><a href="{{ route('admin.tasks') }}">Tugas Assigned</a></li>
+      @else
+      <li><a href="{{ route('tugas.index') }}">Tugas</a></li>
+      @endif
+      <li>
+        <a data-bs-toggle="collapse" href="#sketchCollapse" role="button" aria-expanded="false" aria-controls="sketchCollapse">
+          Sketch <span style="float:right;">▼</span>
+        </a>
+        <div class="collapse show" id="sketchCollapse">
+          <ul style="list-style:none; padding-left: 20px; margin-top: 10px;">
+            <li><a href="{{ route('sketch.show', ['lot' => '7']) }}" @if(isset($lotNumber) && $lotNumber == '7') style="color:white; font-weight:bold;" @endif>LOT 7</a></li>
+            <li><a href="{{ route('sketch.show', ['lot' => '206']) }}" @if(isset($lotNumber) && $lotNumber == '206') style="color:white; font-weight:bold;" @endif>LOT 206</a></li>
+            <li><a href="{{ route('sketch.show', ['lot' => 'TURUNAN206']) }}" @if(isset($lotNumber) && $lotNumber == 'TURUNAN206') style="color:white; font-weight:bold;" @endif>TURUNAN 206</a></li>
+            <li><a href="{{ route('sketch.show', ['lot' => 'REPACK']) }}" @if(isset($lotNumber) && $lotNumber == 'REPACK') style="color:white; font-weight:bold;" @endif>REPACK</a></li>
+          </ul>
+        </div>
+      </li>
+      @if(isset($lotNumber) && (!isset($isRecord) || !$isRecord))
+      <li>
+        <a data-bs-toggle="collapse" href="#actionCollapse" role="button" aria-expanded="false" aria-controls="actionCollapse">
+          Action <span style="float:right;">▼</span>
+        </a>
+        <div class="collapse" id="actionCollapse">
+          <ul style="list-style:none; padding-left: 20px; margin-top: 10px;">
+            <li><a href="#" onclick="window.print()">Print Sketch</a></li>
+            <li><a href="/exportreport.php?LotNumber={{ $lotNumber }}">Export Excel</a></li>
+            <li><a href="#" onclick="showPerLotBatchQRModal()">Batch Print QR (Excel)</a></li>
+            <li><hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.1);"></li>
+            <li><a href="#" onclick="recordData('{{ $lotNumber }}'); return false;">Record</a></li>
+            @if(session('role') == 'admin')
+            <li><hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.1);"></li>
+            <li><a href="/checkexist.php?LotNumber={{ $lotNumber }}">Check</a></li>
             @endif
-
-            <!-- User Settings -->
-            <li>
-                <a data-bs-toggle="collapse" href="#userCollapse" role="button" aria-expanded="false" aria-controls="userCollapse">
-                    User Settings <span style="float:right;">▼</span>
-                </a>
-                <div class="collapse" id="userCollapse">
-                    <ul style="list-style:none; padding-left: 20px; margin-top: 10px;">
-                        <li><a href="#">Account</a></li>
-                        <li><a href="#">Admin Note</a></li>
-                        @if(session('role') == 'admin')
-                        <li><hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.1);"></li>
-                        <li><a href="#">Import from Grace Sketch</a></li>
-                        <li><a href="#">Import from Report</a></li>
-                        <li><hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.1);"></li>
-                        <li><a href="#">Export from SBI</a></li>
-                        <li><a href="#">Export from Grace</a></li>
-                        @endif
-                    </ul>
-                </div>
-            </li>
-            
-            <li><a href="{{ route('logout') }}" style="color: #ff6b6b;">Logout</a></li>
-        </ul>
+          </ul>
+        </div>
+      </li>
+      @endif
+      <li><a href="{{ route('logout') }}" style="color: #ff6b6b;">Logout</a></li>
+    </ul>
     </div>
 
     <!-- Main Content Wrapper -->
@@ -249,6 +187,7 @@
         </div>
     </div>
 
+    @stack('modals')
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
