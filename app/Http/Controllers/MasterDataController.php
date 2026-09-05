@@ -18,7 +18,6 @@ class MasterDataController extends Controller
             ->select('colors.*', DB::raw("(SELECT COUNT(id) FROM pallets WHERE pallets.ColorId = colors.Id AND pallets.DateOut IS NULL AND pallets.PalletNumber != '') as total"))
             ->leftJoin('supply', 'colors.supply', '=', 'supply.id')
             ->select('colors.*', 'supply.supplier as supply_name', DB::raw("(SELECT COUNT(id) FROM pallets WHERE pallets.ColorId = colors.Id AND pallets.DateOut IS NULL AND pallets.PalletNumber != '') as total"))
-            ->where('colors.id', '>', 2)
             ->where('colors.status', '!=', 'deleted');
 
         if ($lot == 'super') {
@@ -37,7 +36,6 @@ class MasterDataController extends Controller
         $queryOther = Color::query()
             ->select('colors.*', 'supply.supplier as supply_name', DB::raw("(SELECT COUNT(id) FROM pallets WHERE pallets.ColorId = colors.Id AND pallets.DateOut IS NULL AND pallets.PalletNumber != '') as total"))
             ->leftJoin('supply', 'colors.supply', '=', 'supply.id')
-            ->where('colors.id', '>', 2)
             ->where('colors.status', '!=', 'deleted');
 
         if ($lot != 'super') {

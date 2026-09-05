@@ -22,11 +22,13 @@
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
                 <div>
                     <a href="{{ route('mastersupplier.index') }}" class="btn btn-secondary me-2">Supplier</a>
+                    <a href="{{ route('masterlotplace.index') }}" class="btn btn-outline-secondary me-2">Lot Place</a>
+                    <a href="{{ route('masterlotnumber.index') }}" class="btn btn-outline-secondary me-2">Lot Number</a>
                 </div>
                 <div>
                     <button type="button" class="btn btn-primary me-2 text-white" onclick="showGlobalBatchQRModal()"><i class="fas fa-qrcode"></i> Global Batch QR</button>
                     <button type="button" class="btn btn-info me-2 text-white" onclick="toggleAdd()">Add New</button>
-                    <a href="#" class="btn btn-danger">Deleted Data</a>
+                    <!-- <a href="#" class="btn btn-danger">Deleted Data</a> -->
                 </div>
             </div>
             
@@ -40,7 +42,6 @@
                                 <th>Prefiks</th>
                                 <th>Invoice Number</th>
                                 <th>LotNumber</th>
-                                <th>Color</th>
                                 <th>Background Color</th>
                                 <th>Supplier</th>
                                 <th>Total</th>
@@ -60,7 +61,7 @@
                                     <td style="font-weight:bold; background-color: {{ $row->ColorHex }}; color: {{ $row->ColorText }}">
                                         {{ $row->Prefiks }}&nbsp;{{ $row->ColorText }}
                                     </td>
-                                    <td style="font-weight:bold;">{{ $row->ColorHex }}</td>
+
                                     <td>{{ $row->supply_name }}</td>
                                     <td>{{ $row->total }}</td>
                                     <td style="width:150px;">
@@ -74,6 +75,7 @@
                                         </button>
                                         <button type="button" class="btn btn-success btn-sm" title="Batch Print QR"
                                             data-colors="{{ $row->Id }};{{ $row->InvoiceNumber }};{{ $row->ColorHex }};{{ $row->ColorText }};{{ $row->LotPlace }};{{ $row->Prefiks }};{{ $row->supply }};" 
+                                            data-total="{{ $row->total }}"
                                             onclick="showBatchQRModal(this)">
                                             <i class="fas fa-qrcode"></i>
                                         </button>
@@ -92,7 +94,7 @@
                                     <td style="font-weight:bold; background-color: {{ $row->ColorHex }}; color: {{ $row->ColorText }}">
                                         {{ $row->Prefiks }}&nbsp;{{ $row->ColorText }}
                                     </td>
-                                    <td style="font-weight:bold;">{{ $row->ColorHex }}</td>
+                                    <!--td style="font-weight:bold;">{{ $row->ColorHex }}</td-->
                                     <td>{{ $row->supply_name }}</td>
                                     <td>{{ $row->total }}</td>
                                     <td style="width:150px;">
@@ -107,6 +109,7 @@
                                         </button>
                                         <button type="button" class="btn btn-success btn-sm" title="Batch Print QR"
                                             data-colors="{{ $row->Id }};{{ $row->InvoiceNumber }};{{ $row->ColorHex }};{{ $row->ColorText }};{{ $row->LotPlace }};{{ $row->Prefiks }};{{ $row->supply }};" 
+                                            data-total="{{ $row->total }}"
                                             onclick="showBatchQRModal(this)">
                                             <i class="fas fa-qrcode"></i>
                                         </button>
@@ -156,8 +159,11 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <select class="form-select" id="SupplyName" name="SupplyName" disabled>
-                            <option selected value="">Default</option>
+                        <select class="form-select" id="SupplyName" name="SupplyName" required>
+                            <option disabled value="">Choose Supplier</option>
+                            @foreach($supplies as $supply)
+                                <option value="{{ $supply->id }}">{{ $supply->id }} - {{ $supply->LotPlace }} - {{ $supply->supplier }}</option>
+                            @endforeach
                         </select>
                     </div>
                     <div class="mb-3">
@@ -348,11 +354,21 @@
         let id = data[0];
         let invoice = data[1];
         let prefiks = data[5];
+        let totalVal = parseInt($(btn).attr("data-total")) || 0;
 
         let htmlContent = `
             <div id="qr-input-container">
+                <div class="mb-3 p-3 bg-light rounded border text-start">
+                    <label for="qr-total-pallet" class="form-label d-block text-dark" style="font-weight:bold; font-size: 14px;">Total Pallet (Master Invoice):</label>
+                    <div class="input-group mb-2">
+                        <input type="number" id="qr-total-pallet" class="form-control" min="1" value="${totalVal > 0 ? totalVal : ''}" placeholder="Masukkan Total Pallet">
+                        <button class="btn btn-primary" type="button" onclick="generateFromTotal()"><i class="fas fa-magic"></i> Generate Pallet</button>
+                    </div>
+                    <small class="text-muted d-block">Masukkan jumlah total pallet. Saat tombol <b>Print Batch</b> ditekan, barcode akan langsung dicetak sesuai total pallet (${totalVal > 0 ? 'tersedia: ' + totalVal + ' pallet' : 'contoh: 5 pallet'}).</small>
+                </div>
+                <hr>
                 <div class="mb-3">
-                    <label for="import-qr-file" class="form-label text-start d-block" style="font-weight:bold; font-size: 14px;">Import dari CSV / Excel</label>
+                    <label for="import-qr-file" class="form-label text-start d-block" style="font-weight:bold; font-size: 14px;">Atau Import dari CSV / Excel</label>
                     <div class="d-flex align-items-center">
                         <input type="file" id="import-qr-file" class="form-control" accept=".csv, .xlsx, .xls">
                         <button class="btn btn-info ms-2 text-white" type="button" onclick="processImportQR()"><i class="fas fa-file-import"></i> Import</button>
@@ -360,12 +376,42 @@
                     <small class="text-muted d-block text-start mt-1">Pastikan data nomor pallet ada di <b>kolom pertama (Kolom A)</b>.</small>
                 </div>
                 <hr>
-                <div class="input-group mb-2 qr-input-row">
-                    <input type="text" class="form-control qr-pallet-input" placeholder="Nomor Pallet (contoh: 001)">
-                    <button class="btn btn-success" type="button" onclick="addQrInputRow()"><i class="fas fa-plus"></i></button>
+                <label class="form-label text-start d-block" style="font-weight:bold; font-size: 14px;">Daftar Nomor Pallet yang Akan Dicetak:</label>
+                <div id="qr-pallet-list" style="max-height: 180px; overflow-y: auto;">
+                    <div class="input-group mb-2 qr-input-row">
+                        <input type="text" class="form-control qr-pallet-input" placeholder="Nomor Pallet (contoh: 001)">
+                        <button class="btn btn-success" type="button" onclick="addQrInputRow()"><i class="fas fa-plus"></i></button>
+                    </div>
                 </div>
             </div>
         `;
+
+        window.generateFromTotal = function() {
+            let total = parseInt($('#qr-total-pallet').val());
+            if (isNaN(total) || total < 1) {
+                Swal.showValidationMessage('Masukkan total pallet yang valid (minimal 1)');
+                return;
+            }
+            $('#qr-pallet-list').empty();
+            for (let i = 1; i <= total; i++) {
+                let numStr = String(i).padStart(3, '0');
+                let rowHtml = `
+                    <div class="input-group mb-2 qr-input-row">
+                        <input type="text" class="form-control qr-pallet-input" value="${numStr}">
+                        <button class="btn btn-danger" type="button" onclick="this.parentElement.remove()"><i class="fas fa-minus"></i></button>
+                    </div>
+                `;
+                $('#qr-pallet-list').append(rowHtml);
+            }
+            let addRowHtml = `
+                <div class="input-group mb-2 qr-input-row">
+                    <input type="text" class="form-control qr-pallet-input" placeholder="Nomor Pallet">
+                    <button class="btn btn-success" type="button" onclick="addQrInputRow()"><i class="fas fa-plus"></i></button>
+                </div>
+            `;
+            $('#qr-pallet-list').append(addRowHtml);
+            Swal.resetValidationMessage();
+        };
 
         window.processImportQR = function() {
             let fileInput = document.getElementById('import-qr-file');
@@ -383,7 +429,7 @@
                     let worksheet = workbook.Sheets[firstSheetName];
                     let excelData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
                     
-                    $('#qr-input-container .qr-input-row').remove();
+                    $('#qr-pallet-list').empty();
 
                     let added = 0;
                     excelData.forEach(function(row) {
@@ -396,7 +442,7 @@
                                         <button class="btn btn-danger" type="button" onclick="this.parentElement.remove()"><i class="fas fa-minus"></i></button>
                                     </div>
                                 `;
-                                $('#qr-input-container').append(rowHtml);
+                                $('#qr-pallet-list').append(rowHtml);
                                 added++;
                             }
                         }
@@ -408,7 +454,7 @@
                             <button class="btn btn-success" type="button" onclick="addQrInputRow()"><i class="fas fa-plus"></i></button>
                         </div>
                     `;
-                    $('#qr-input-container').append(addRowHtml);
+                    $('#qr-pallet-list').append(addRowHtml);
                     
                     if(added > 0) {
                         Swal.resetValidationMessage();
@@ -431,7 +477,7 @@
                     <button class="btn btn-danger" type="button" onclick="this.parentElement.remove()"><i class="fas fa-minus"></i></button>
                 </div>
             `;
-            $('#qr-input-container').append(rowHtml);
+            $('#qr-pallet-list').append(rowHtml);
         };
 
         Swal.fire({
@@ -441,16 +487,29 @@
             confirmButtonText: 'Print Batch',
             cancelButtonText: 'Batal',
             didOpen: () => {
-                $('.qr-pallet-input').first().focus();
+                if (totalVal > 0) {
+                    generateFromTotal();
+                } else {
+                    $('#qr-total-pallet').focus();
+                }
             },
             preConfirm: () => {
+                let totalInput = parseInt($('#qr-total-pallet').val());
                 let pallets = [];
                 $('.qr-pallet-input').each(function() {
                     let val = $(this).val().trim();
                     if(val) pallets.push(val);
                 });
+
+                // Jika kolom total pallet diisi dan list masih kosong, otomatis generate
+                if(pallets.length === 0 && !isNaN(totalInput) && totalInput >= 1) {
+                    for(let i = 1; i <= totalInput; i++) {
+                        pallets.push(String(i).padStart(3, '0'));
+                    }
+                }
+
                 if(pallets.length === 0) {
-                    Swal.showValidationMessage('Minimal masukkan 1 nomor pallet');
+                    Swal.showValidationMessage('Minimal masukkan 1 nomor pallet atau isi kolom Total Pallet');
                     return false;
                 }
                 return pallets;

@@ -33,27 +33,36 @@ class SketchController extends Controller
         
         $lastinfo = Lastinfo::where('LotPlace', $lotPlace)->get();
         
-        $supplies = Supply::select('supply.*', DB::raw("(SELECT COUNT(id) FROM colors WHERE colors.supply = supply.id AND colors.status != 'deleted' AND supply.LotPlace = colors.LotPlace) as total"))
+        // Perbaikan: Dukung status active maupun NULL
+        $supplies = Supply::select('supply.*', DB::raw("(SELECT COUNT(id) FROM colors WHERE colors.supply = supply.id AND (colors.status != 'deleted' OR colors.status IS NULL) AND supply.LotPlace = colors.LotPlace) as total"))
             ->where('LotPlace', $lotPlace)
-            ->whereRaw("(SELECT COUNT(id) FROM colors WHERE colors.supply = supply.id AND colors.status != 'deleted' AND supply.LotPlace = colors.LotPlace) != 0")
+            ->whereRaw("(SELECT COUNT(id) FROM colors WHERE colors.supply = supply.id AND (colors.status != 'deleted' OR colors.status IS NULL) AND supply.LotPlace = colors.LotPlace) != 0")
             ->orderBy('id', 'Desc')
             ->get();
         
         $colors_by_supplier = [];
         foreach($supplies as $sup) {
+            $queryColors = Color::select('colors.*');
+
             if ($lotPlace == 'GRACE') {
-                $colors = Color::select('colors.*', 
+                $queryColors->addSelect(
                     DB::raw("(SELECT COUNT(id) FROM pallets WHERE pallets.ColorId = colors.Id AND pallets.DateOut IS NULL AND pallets.PalletNumber != '' AND LotNumber = '243') as total"),
                     DB::raw("(SELECT COUNT(id) FROM pallets WHERE pallets.ColorId = colors.Id AND pallets.DateOut IS NULL AND pallets.PalletNumber != '' AND LotNumber = '244') as total2"),
                     DB::raw("(SELECT COUNT(id) FROM pallets WHERE pallets.ColorId = colors.Id AND pallets.DateOut IS NULL AND pallets.PalletNumber != '' AND LotNumber = '245') as total3")
-                )->where('LotPlace', $lotPlace)->where('supply', $sup->id)->where('status', '!=', 'deleted')->orderBy('InvoiceNumber', 'ASC')->get();
+                );
             } else {
-                $colors = Color::select('colors.*', 
-                    DB::raw("(SELECT COUNT(id) FROM pallets WHERE pallets.ColorId = colors.Id AND pallets.DateOut IS NULL AND pallets.PalletNumber != '' AND LotNumber = ?) as total")
-                )->addBinding($lotNumber, 'select')->where('LotPlace', $lotPlace)->where('supply', $sup->id)->where('status', '!=', 'deleted')->orderBy('InvoiceNumber', 'ASC')->get();
+                $queryColors->selectRaw("(SELECT COUNT(id) FROM pallets WHERE pallets.ColorId = colors.Id AND pallets.DateOut IS NULL AND pallets.PalletNumber != '' AND LotNumber = ?) as total", [$lotNumber]);
             }
             
-            // Check receipt existence
+            $colors = $queryColors->where('LotPlace', $lotPlace)
+                ->where('supply', $sup->id)
+                ->where(function($q) {
+                    $q->where('status', '!=', 'deleted')
+                      ->orWhereNull('status');
+                })
+                ->orderBy('InvoiceNumber', 'ASC')
+                ->get();
+            
             foreach($colors as &$color) {
                 $check = Receipt::where('invoiceNumber', $color->InvoiceNumber)->count();
                 $color->receipt_count = $check;
@@ -62,7 +71,7 @@ class SketchController extends Controller
             $colors_by_supplier[$sup->id] = $colors;
         }
         
-        // Modal data (from sketchfunction.php logic)
+        // Modal data: HAPUS ->where('colors.Id', '!=', 1) dan perbaiki filter status
         $modalColors = Color::select('colors.*', DB::raw("(SELECT COUNT(id) FROM pallets WHERE pallets.ColorId = colors.Id AND pallets.DateOut IS NULL AND pallets.PalletNumber != '') as total"))
             ->where(function($q) use ($lotPlace) {
                 if ($lotPlace == 'GRACE') {
@@ -72,11 +81,29 @@ class SketchController extends Controller
                 } else {
                     $q->where('colors.LotPlace', $lotPlace)->orWhere('colors.LotPlace', '');
                 }
-            })->where('status', '!=', 'deleted')->where('colors.Id', '!=', 1)->orderBy('supply', 'DESC')->get();
+            })
+            ->where(function($q) {
+                $q->where('status', '!=', 'deleted')
+                  ->orWhereNull('status');
+            })
+            ->orderBy('supply', 'DESC')
+            ->get();
 
         $modalSuppliers = Supply::where('Lotplace', $lotPlace)->orderBy('supplier', 'ASC')->get();
 
-        return compact('box_array', 'lastinfo', 'supplies', 'colors_by_supplier', 'lastInvoice', 'lotNumber', 'lotPlace', 'modalColors', 'modalSuppliers');
+        $availablePrefixes = Color::select('Prefiks')->distinct()->whereNotNull('Prefiks')->where('Prefiks', '!=', '')->pluck('Prefiks')
+            ->merge(Supply::select('prefix')->distinct()->whereNotNull('prefix')->where('prefix', '!=', '')->pluck('prefix'))
+            ->unique()->filter()->values();
+
+        $availableLotPlaces = \App\Models\MasterLotPlace::pluck('lot_number')
+            ->merge(['7', '206', 'TURUNAN206', 'REPACK', 'GRACE', '242'])
+            ->unique()->filter()->values();
+
+        $availableLotNumbers = \App\Models\MasterLotNumber::pluck('lot_place')
+            ->merge(['7', '206', 'TURUNAN206', 'REPACK', '242', '243', '244', '245'])
+            ->unique()->filter()->values();
+
+        return compact('box_array', 'lastinfo', 'supplies', 'colors_by_supplier', 'lastInvoice', 'lotNumber', 'lotPlace', 'modalColors', 'modalSuppliers', 'availablePrefixes', 'availableLotPlaces', 'availableLotNumbers');
     }
 
     public function show($lot)

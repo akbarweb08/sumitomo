@@ -34,18 +34,29 @@ class MasterSupplierController extends Controller
     {
         $supplier = $request->SupplierName;
         $LotPlace = $request->LotPlace;
+        $prefix = $request->prefix;
+        $address = $request->address;
+        $pic_name = $request->pic_name;
+        $contact = $request->contact;
+        $email = $request->email;
 
         $exists = Supply::where('supplier', $supplier)
             ->where('LotPlace', $LotPlace)
+            ->where('prefix', $prefix)
             ->exists();
 
         if ($exists) {
             return response()->json(['message' => 'Maaf data yang anda masukkan sama', 'status' => 'error']);
         }
 
-        Supply::insert([
+        Supply::create([
             'supplier' => $supplier,
-            'LotPlace' => $LotPlace
+            'LotPlace' => $LotPlace,
+            'prefix' => $prefix,
+            'address' => $address,
+            'pic_name' => $pic_name,
+            'contact' => $contact,
+            'email' => $email,
         ]);
 
         return response()->json(['message' => 'Berhasil', 'status' => 'success']);
@@ -56,9 +67,15 @@ class MasterSupplierController extends Controller
         $Id = $request->Id;
         $supplier = $request->SupplierName;
         $LotPlace = $request->LotPlace;
+        $prefix = $request->prefix;
+        $address = $request->address;
+        $pic_name = $request->pic_name;
+        $contact = $request->contact;
+        $email = $request->email;
 
         $exists = Supply::where('supplier', $supplier)
             ->where('LotPlace', $LotPlace)
+            ->where('prefix', $prefix)
             ->where('id', '!=', $Id)
             ->exists();
 
@@ -68,7 +85,12 @@ class MasterSupplierController extends Controller
 
         Supply::where('id', $Id)->update([
             'supplier' => $supplier,
-            'LotPlace' => $LotPlace
+            'LotPlace' => $LotPlace,
+            'prefix' => $prefix,
+            'address' => $address,
+            'pic_name' => $pic_name,
+            'contact' => $contact,
+            'email' => $email,
         ]);
 
         return response()->json(['message' => 'Berhasil', 'status' => 'success']);

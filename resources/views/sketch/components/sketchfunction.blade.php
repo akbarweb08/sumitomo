@@ -66,7 +66,7 @@
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="exampleModalLabel">Input Data</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          <!--button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button-->
         </div>
         <div class="modal-body">
           <div class="form-group mb-2">
@@ -131,33 +131,77 @@
         <form id="myFormId" method="POST" autocomplete="off">
           @csrf
           <div class="modal-body">
-            <div class="form-group mb-2">
-              <input type="hidden" name="IdPallet" class="form-control" id="inputIdPallet">
-              <input type="text" name="LotNumber" class="form-control" id="inputLotNumber" readonly>
+            <div class="row">
+              <div class="col-md-6 mb-2">
+                <label class="form-label mb-1">Lot Place</label>
+                <select class="form-select" id="inputLotPlace" name="LotPlace">
+                  @foreach($availableLotPlaces ?? [] as $lp)
+                    <option value="{{ $lp }}" {{ ($lotPlace ?? '') == $lp ? 'selected' : '' }}>{{ $lp }}</option>
+                  @endforeach
+                </select>
+              </div>
+              <div class="col-md-6 mb-2">
+                <label class="form-label mb-1">Lot Number</label>
+                <select class="form-select" id="inputLotNumber" name="LotNumber">
+                  @foreach($availableLotNumbers ?? [] as $ln)
+                    <option value="{{ $ln }}" {{ ($lotNumber ?? '') == $ln ? 'selected' : '' }}>{{ $ln }}</option>
+                  @endforeach
+                </select>
+              </div>
             </div>
             <div class="form-group mb-2">
+              <input type="hidden" name="IdPallet" class="form-control" id="inputIdPallet">
+              <label class="form-label mb-1">Box Number</label>
               <input type="text" name="BoxNumber" class="form-control" id="inputBoxNumber" readonly>
             </div>
             <div class="form-group mb-2">
-              <input type="text" class="form-control" id="inputScan" placeholder="Scan Barcode (Format: ID - Nomor Pallet)" autofocus>
+                <label class="form-label mb-1">Scan Barcode</label>
+                <input type="text" 
+                    class="form-control" 
+                    id="inputScan" 
+                    placeholder="Scan Barcode (Format: ID - Nomor Pallet)" 
+                    autofocus>
+            </div>
+            <div class="row">
+              <div class="col-md-5 mb-2">
+                <label class="form-label mb-1">Prefiks</label>
+                <select class="form-select" id="inputScanPrefiks" name="Prefiks">
+                  <option value="">-- Semua Prefiks --</option>
+                  @foreach($availablePrefixes ?? [] as $p)
+                    <option value="{{ $p }}">{{ $p }}</option>
+                  @endforeach
+                </select>
+              </div>
+              <div class="col-md-7 mb-2">
+                <label class="form-label mb-1">Invoice Number</label>
+                <select required 
+                        class="form-select" 
+                        name="ColorId" 
+                        id="inputColorId" 
+                        style="width: 100%;">
+                  <option value="">Choose Invoice Number</option>
+                  @foreach($modalColors as $row)
+                    <option data-prefiks="{{ $row->Prefiks }}" style="background-color:{{ $row->ColorHex }};color: {{ $row->ColorText }};" value="{{ $row->Id }}" {{ ($lastInvoice == $row->Id) ? 'selected' : '' }}>
+                      ({{ $row->Prefiks }}) {{ $row->InvoiceNumber }} - Total : {{ $row->total }}
+                    </option>
+                  @endforeach
+                </select>
+              </div>
             </div>
             <div class="form-group mb-2">
-              <select required class="form-control" name="ColorId" id="inputColorId" style="width: 100%;">
-                <option value="1">Choose Invoice Number</option>
-                @foreach($modalColors as $row)
-                  <option style="background-color:{{ $row->ColorHex }};color: {{ $row->ColorText }};" value="{{ $row->Id }}" {{ ($lastInvoice == $row->Id) ? 'selected' : '' }}>
-                    ({{ $row->Prefiks }}) {{ $row->InvoiceNumber }} - Total : {{ $row->total }}
-                  </option>
-                @endforeach
-              </select>
-            </div>
-            <div class="form-group mb-2">
-              <input type="text" name="PalletNumber" required class="form-control" id="inputPalletNumber" placeholder="Enter Pallet No">
+              <label class="form-label mb-1">Pallet Number</label>
+              <input type="text" 
+                     name="PalletNumber" 
+                     required 
+                     class="form-control" 
+                     id="inputPalletNumber" 
+                     placeholder="Enter Pallet No">
             </div>
             <i><div name="labelError" id="labelErrorMsg" style='color: red;'></div></i>
           </div>
           <div class="modal-footer d-flex flex-wrap justify-content-center">
             
+            @if(auth()->user()->role === 'user' || auth()->user()->permit === 'all')
             <div class="btn-group m-1" role="group">
                 <button type="button" id="deleteModal" onclick="deleteData(this)" class="btn btn-danger">Delete</button>
                 <div class="btn-group" role="group">
@@ -185,7 +229,8 @@
             </div>
 
             <button type="button" onclick="editData()" class="btn btn-secondary m-1" id="editButtonEdit">Edit</button>
-            <button type="button" onclick="submitData()" class="btn btn-primary m-1">Save</button>
+            <button type="button" onclick="submitData()" class="btn btn-primary m-1" id="saveButtonSubmit">Save</button>
+            @endif
 
             <div class="w-100 mt-2 mb-2"></div>
 
@@ -194,6 +239,7 @@
             <button type="button" onclick="openAssignDriverModal()" class="btn btn-warning m-1 text-dark">Assign Driver</button>
             @endif
 
+            @if(auth()->user()->role === 'user' || auth()->user()->permit === 'all')
             <div class="btn-group m-1" role="group">
                 <button type="button" onclick="moveDataa(this)" class="btn btn-info text-white">Move</button>
                 <div class="btn-group" role="group">
@@ -221,6 +267,7 @@
                     <a class="dropdown-item" onclick="groupToBack(this)" style="cursor: pointer;">To Back</a>
                 </div>
             </div>
+            @endif
 
           </div>
         </form>
@@ -334,10 +381,7 @@
         var prefiks = $("#editPrefiks").val();
         var invoice = $("#editInvoiceNumber").val();
         
-        if(!id) {
-            Swal.fire('Error', 'ID Invoice tidak ditemukan', 'error');
-            return;
-        }
+
         
         // Menutup modal bootstrap agar input pada SweetAlert bisa di-klik (menghindari focus trap)
         $('#editcolor').modal('hide');
@@ -439,23 +483,68 @@
         if(dataPallets) {
             var splitted = dataPallets.split(';');
             $("#inputIdPallet").val(splitted[0]);
-            $("#inputColorId").val(splitted[2] ? splitted[2] : 1);
+            var colId = splitted[2] ? splitted[2] : 1;
+            $("#inputColorId").val(colId);
             $("#inputPalletNumber").val(splitted[3]);
             $("#inputLotNumber").val(lotNumber);
             $("#inputBoxNumber").val(splitted[4]);
+            if (typeof lotPlace !== 'undefined' && lotPlace) {
+                $("#inputLotPlace").val(lotPlace);
+            }
+            var optPref = $("#inputColorId option:selected").data('prefiks');
+            if (optPref) {
+                $("#inputScanPrefiks").val(optPref);
+            }
         } else {
             $("#inputIdPallet").val("");
             $("#inputColorId").val(1);
             $("#inputPalletNumber").val("");
             $("#inputLotNumber").val(lotNumber);
             $("#inputBoxNumber").val($(event).attr("data-boxnumber"));
+            if (typeof lotPlace !== 'undefined' && lotPlace) {
+                $("#inputLotPlace").val(lotPlace);
+            }
+            $("#inputScanPrefiks").val("");
         }
+        $("#inputColorId option").show();
         $("#inputScan").val("");
         $('#modal2').modal('toggle');
         setTimeout(function() {
             $('#inputScan').focus();
         }, 500);
     }
+
+    $('#inputScanPrefiks').on('change', function() {
+        var selectedPref = $(this).val();
+        $('#inputColorId option').each(function() {
+            if (!$(this).val()) {
+                $(this).show();
+                return;
+            }
+            var pref = $(this).data('prefiks');
+            if (!selectedPref || pref == selectedPref) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+        // If current selection is hidden, select empty or first visible
+        if (selectedPref && $('#inputColorId option:selected').data('prefiks') !== selectedPref) {
+            var firstVisible = $('#inputColorId option').filter(function() {
+                return $(this).css('display') !== 'none' && $(this).val() !== '';
+            }).first().val();
+            if (firstVisible) {
+                $('#inputColorId').val(firstVisible);
+            }
+        }
+    });
+
+    $('#inputColorId').on('change', function() {
+        var optPref = $(this).find('option:selected').data('prefiks');
+        if (optPref) {
+            $('#inputScanPrefiks').val(optPref);
+        }
+    });
 
     $('#inputPalletNumber').on('keypress', function (e) {
         if(e.which === 13){
@@ -476,14 +565,36 @@
                     
                     // Validasi: cek apakah idPart ada di window.perLotColors
                     var foundInvoice = window.perLotColors.find(function(c) {
-                        return c.id == idPart; // Menggunakan == karena idPart mungkin string
+                        return (c.id == idPart) || (c.Id == idPart);
                     });
 
                     if (foundInvoice) {
-                        $('#inputColorId').val(idPart).change();
+                        var targetId = String(foundInvoice.id !== undefined ? foundInvoice.id : foundInvoice.Id);
+
+                        // 1. Set value native HTML select
+                        $('#inputColorId').val(targetId);
+
+                        // 2. Jika menggunakan library Select2 / Bootstrap-Select, paksa refresh tampilan
+                        if ($.fn.select2 && $('#inputColorId').data('select2')) {
+                            $('#inputColorId').val(targetId).trigger('change.select2');
+                        } else {
+                            $('#inputColorId').trigger('change');
+                        }
+
+                        // 3. Fallback: Paksa ubah attribute selected pada option secara langsung
+                        $('#inputColorId option').prop('selected', false);
+                        $('#inputColorId option[value="' + targetId + '"]').prop('selected', true);
+
+                        // Sync combo box prefiks
+                        if (foundInvoice.prefiks || foundInvoice.Prefiks) {
+                            $('#inputScanPrefiks').val(foundInvoice.prefiks || foundInvoice.Prefiks);
+                        }
+
+                        // Isi nomor pallet dan reset input scanner
                         $('#inputPalletNumber').val(nomorPart);
                         $(this).val('');
-                    } else {
+                    }
+                    else {
                         Swal.fire({
                             title: 'Akses Ditolak',
                             text: 'ID Invoice ' + idPart + ' tidak ditemukan di lot ini. Pastikan Anda men-scan QR dari lot yang sesuai.',
@@ -602,7 +713,8 @@
                 Swal.fire('Success', res.message, 'success');
             },
             error: function(err) {
-                Swal.fire('Error', 'Gagal assign driver', 'error');
+                var msg = (err.responseJSON && err.responseJSON.message) ? err.responseJSON.message : 'Gagal assign driver';
+                Swal.fire('Peringatan', msg, 'warning');
             }
         });
     }
@@ -754,7 +866,6 @@
                             
                             let resHtml = `<b>Berhasil dicocokkan: ${validItems.length} Pallet.</b><br>`;
                             if(errors.length > 0) {
-                                resHtml += `<span class="text-danger">Ada ${errors.length} baris tidak valid/ditemukan.</span><br>`;
                                 resHtml += `<small>` + errors.slice(0, 5).join('<br>') + (errors.length > 5 ? '<br>...' : '') + `</small>`;
                             }
                             document.getElementById('perlot-qr-results').innerHTML = resHtml;

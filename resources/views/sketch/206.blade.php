@@ -94,15 +94,15 @@
       @php $kuning++; @endphp
     @endfor
 
-    <a class="btn btn-default" href="#" style="margin-top:-2085px;margin-left:1852px;color:blue"></a>
+    <!--a class="btn btn-default" href="#" style="margin-top:-2085px;margin-left:1852px;color:blue"></a-->
     
-    <div id="container">
+    <!--div id="container">
       <a style="color:black;font-size:16px; " onclick="toggleColorInput()">
         <div id="kotaket" style="border-style: solid; border-width:5px; border-color: black; background-color: grey; color: white; width: 200px">
           &nbsp;&nbsp;&nbsp;ADD INVOICE&nbsp;&nbsp;&nbsp;
         </div>
       </a>
-    </div>
+    </div--> 
     
     <div id="container" style="margin-top: 15px; position: relative; ">
       @foreach ($supplies as $sup)

@@ -245,8 +245,12 @@
     </div>
     <ul class="sidebar-menu">
       <li><a href="{{ route('home') }}">Home</a></li>
-      <li><a href="{{ route('masterdata.index') }}">Master Data</a></li>
-      <li><a href="{{ route('masteruser.index') }}">Master User</a></li>
+      @if(auth()->check() && strtolower(auth()->user()->role) === 'super')
+    <li><a href="{{ route('masterdata.index') }}">Master Data</a></li>
+@endif
+      @if(auth()->check() && strtolower(auth()->user()->role) === 'super')
+    <li><a href="{{ route('masteruser.index') }}">Master User</a></li>
+      @endif
       <li><a href="{{ route('datalist.index') }}">Pallet Data</a></li>
       @if(session('role') == 'admin')
       <li><a href="{{ route('admin.tasks') }}">Tugas Assigned</a></li>
@@ -261,8 +265,8 @@
           <ul style="list-style:none; padding-left: 20px; margin-top: 10px;">
             <li><a href="{{ route('sketch.show', ['lot' => '7']) }}" @if(isset($lotNumber) && $lotNumber == '7') style="color:white; font-weight:bold;" @endif>LOT 7</a></li>
             <li><a href="{{ route('sketch.show', ['lot' => '206']) }}" @if(isset($lotNumber) && $lotNumber == '206') style="color:white; font-weight:bold;" @endif>LOT 206</a></li>
-            <li><a href="{{ route('sketch.show', ['lot' => 'TURUNAN206']) }}" @if(isset($lotNumber) && $lotNumber == 'TURUNAN206') style="color:white; font-weight:bold;" @endif>TURUNAN 206</a></li>
-            <li><a href="{{ route('sketch.show', ['lot' => 'REPACK']) }}" @if(isset($lotNumber) && $lotNumber == 'REPACK') style="color:white; font-weight:bold;" @endif>REPACK</a></li>
+            <!--li><a href="{{ route('sketch.show', ['lot' => 'TURUNAN206']) }}" @if(isset($lotNumber) && $lotNumber == 'TURUNAN206') style="color:white; font-weight:bold;" @endif>TURUNAN 206</a></li-->
+            <!--li><a href="{{ route('sketch.show', ['lot' => 'REPACK']) }}" @if(isset($lotNumber) && $lotNumber == 'REPACK') style="color:white; font-weight:bold;" @endif>REPACK</a></li-->
           </ul>
         </div>
       </li>
@@ -277,10 +281,12 @@
             <li><a href="/exportreport.php?LotNumber={{ $lotNumber }}">Export Excel</a></li>
             <li><a href="#" onclick="showPerLotBatchQRModal()">Batch Print QR (Excel)</a></li>
             <li><hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.1);"></li>
+            @if(session('role') == 'admin')
             <li><a href="#" onclick="recordData('{{ $lotNumber }}'); return false;">Record</a></li>
+            @endif
             @if(session('role') == 'admin')
             <li><hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.1);"></li>
-            <li><a href="/checkexist.php?LotNumber={{ $lotNumber }}">Check</a></li>
+            <!--li><a href="/checkexist.php?LotNumber={{ $lotNumber }}">Check</a></li-->
             @endif
           </ul>
         </div>

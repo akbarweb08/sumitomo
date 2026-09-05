@@ -29,8 +29,13 @@
                         <thead class="table-dark">
                             <tr>
                                 <th onclick="sortTable(0)" style="cursor:pointer;">No.</th>
-                                <th onclick="sortTable(1)" style="cursor:pointer;">Supplier Name</th>
-                                <th onclick="sortTable(2)" style="cursor:pointer;">Lot Place</th>
+                                <th onclick="sortTable(1)" style="cursor:pointer;">Kode Prefiks</th>
+                                <th onclick="sortTable(2)" style="cursor:pointer;">Nama Perusahaan</th>
+                                <th onclick="sortTable(3)" style="cursor:pointer;">Lot Place</th>
+                                <th>Alamat</th>
+                                <th>Penanggung Jawab</th>
+                                <th>No Contact</th>
+                                <th>Email</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -46,13 +51,25 @@
                                 @endphp
                                 <tr style="background-color: {{ $bgColor }}">
                                     <td>{{ $i }}</td>
+                                    <td>{{ $row->prefix }}</td>
                                     <td>{{ $row->supplier }}</td>
                                     <td>{{ $row->LotPlace }}</td>
-                                    <td style="width: 250px;">
-                                        <button type="button" class="btn btn-success btn-sm me-2" style="width: 80px;"
-                                            data-colors="{{ $row->id }};{{ $row->supplier }};{{ $row->LotPlace }};"
+                                    <td>{{ $row->address }}</td>
+                                    <td>{{ $row->pic_name }}</td>
+                                    <td>{{ $row->contact }}</td>
+                                    <td>{{ $row->email }}</td>
+                                    <td style="width: 180px;">
+                                        <button type="button" class="btn btn-success btn-sm me-1" style="width: 70px;"
+                                            data-id="{{ $row->id }}"
+                                            data-prefix="{{ $row->prefix }}"
+                                            data-supplier="{{ $row->supplier }}"
+                                            data-lotplace="{{ $row->LotPlace }}"
+                                            data-address="{{ $row->address }}"
+                                            data-pic_name="{{ $row->pic_name }}"
+                                            data-contact="{{ $row->contact }}"
+                                            data-email="{{ $row->email }}"
                                             onclick="toggleEditModal(this)">Edit</button>
-                                        <button type="button" class="btn btn-danger btn-sm" style="width: 80px;" onclick="deleteData('{{ $row->id }}')">Delete</button>
+                                        <button type="button" class="btn btn-danger btn-sm" style="width: 70px;" onclick="deleteData('{{ $row->id }}')">Delete</button>
                                     </td>
                                 </tr>
                                 @php $i++; @endphp
@@ -72,15 +89,20 @@
             @csrf
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Input Data</h5>
+                    <h5 class="modal-title">Input Data Supplier</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <input type="text" name="SupplierName" class="form-control" id="inputSupplierName" placeholder="Enter Supplier Name" required autofocus>
+                        <label class="form-label">Kode Prefiks</label>
+                        <input type="text" name="prefix" class="form-control" id="inputPrefix" placeholder="Contoh: DA, DS, RA" autofocus>
                     </div>
                     <div class="mb-3">
-                        <label>Pilih Lot</label>
+                        <label class="form-label">Nama Perusahaan</label>
+                        <input type="text" name="SupplierName" class="form-control" id="inputSupplierName" placeholder="Masukkan Nama Perusahaan" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Pilih Lot</label>
                         <select class="form-select" id="InputLotPlace" name="LotPlace" required>
                             @if(in_array(session('permit'), ['7', 'super']))
                                 <option value="7">7</option>
@@ -95,6 +117,22 @@
                                 <option value="242">242</option>
                             @endif
                         </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Alamat</label>
+                        <textarea name="address" class="form-control" id="inputAddress" rows="2" placeholder="Masukkan Alamat"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nama Penanggung Jawab</label>
+                        <input type="text" name="pic_name" class="form-control" id="inputPicName" placeholder="Masukkan Nama Penanggung Jawab">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">No Contact</label>
+                        <input type="text" name="contact" class="form-control" id="inputContact" placeholder="Contoh: 08123456789">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control" id="inputEmail" placeholder="Contoh: supplier@example.com">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -113,15 +151,21 @@
             @csrf
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Edit Data</h5>
+                    <h5 class="modal-title">Edit Data Supplier</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
+                    <input type="hidden" name="Id" id="editId">
                     <div class="mb-3">
-                        <input type="text" name="SupplierName" class="form-control" id="editSupplierName" placeholder="Enter Supplier Name" required autofocus>
+                        <label class="form-label">Kode Prefiks</label>
+                        <input type="text" name="prefix" class="form-control" id="editPrefix" placeholder="Contoh: DA, DS, RA" autofocus>
                     </div>
                     <div class="mb-3">
-                        <label>Pilih Lot</label>
+                        <label class="form-label">Nama Perusahaan</label>
+                        <input type="text" name="SupplierName" class="form-control" id="editSupplierName" placeholder="Masukkan Nama Perusahaan" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Pilih Lot</label>
                         <select class="form-select" id="EditLotPlace" name="LotPlace" required>
                             @if(in_array(session('permit'), ['7', 'super']))
                                 <option value="7">7</option>
@@ -137,7 +181,22 @@
                             @endif
                         </select>
                     </div>
-                    <input type="hidden" name="Id" id="editId">
+                    <div class="mb-3">
+                        <label class="form-label">Alamat</label>
+                        <textarea name="address" class="form-control" id="editAddress" rows="2" placeholder="Masukkan Alamat"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nama Penanggung Jawab</label>
+                        <input type="text" name="pic_name" class="form-control" id="editPicName" placeholder="Masukkan Nama Penanggung Jawab">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">No Contact</label>
+                        <input type="text" name="contact" class="form-control" id="editContact" placeholder="Contoh: 08123456789">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control" id="editEmail" placeholder="Contoh: supplier@example.com">
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -165,10 +224,15 @@
     }
 
     function toggleEditModal(btn) {
-        let data = $(btn).attr("data-colors").split(';');
-        $("#editId").val(data[0]);
-        $("#editSupplierName").val(data[1]);
-        $("#EditLotPlace").val(data[2]);
+        let $btn = $(btn);
+        $("#editId").val($btn.data('id'));
+        $("#editPrefix").val($btn.data('prefix'));
+        $("#editSupplierName").val($btn.data('supplier'));
+        $("#EditLotPlace").val($btn.data('lotplace'));
+        $("#editAddress").val($btn.data('address'));
+        $("#editPicName").val($btn.data('pic_name'));
+        $("#editContact").val($btn.data('contact'));
+        $("#editEmail").val($btn.data('email'));
         editModal.show();
     }
 

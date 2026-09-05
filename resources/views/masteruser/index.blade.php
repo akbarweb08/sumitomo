@@ -18,7 +18,7 @@
                 <div class="card-header bg-white">
                     <div class="d-flex justify-content-between align-items-center">
                         @if (session('name') == 'admin')
-                        <button type="button" class="btn btn-secondary">Log</button>
+                        <!-- <button type="button" class="btn btn-secondary">Log</button> -->
                         @else
                         <div></div>
                         @endif

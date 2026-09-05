@@ -79,9 +79,9 @@
                     </a>
                 @endif
                 @if (session('permit') == 'GRACE' || session('role') == 'admin')
-                    <a href="{{ route('sketch.show', ['lot' => '243']) }}" class="btn btn-info text-white shadow-sm" style="border-radius: 10px; padding: 12px 25px; background: linear-gradient(135deg, #00c6ff, #0072ff); border: none;">
+                    <!--a href="{{ route('sketch.show', ['lot' => '243']) }}" class="btn btn-info text-white shadow-sm" style="border-radius: 10px; padding: 12px 25px; background: linear-gradient(135deg, #00c6ff, #0072ff); border: none;">
                         <i class="fas fa-map-marked-alt me-2"></i> Buka Sketch LOT 243
-                    </a>
+                    </a-->
                 @endif
             </div>
         </div>

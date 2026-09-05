@@ -38,6 +38,18 @@ class DriverTaskController extends Controller
             'note' => 'nullable|string'
         ]);
 
+        // Cek apakah driver sudah memiliki tugas dengan status pending (tidak boleh double assign)
+        $hasPendingTask = DriverTask::where('driver_id', $request->driver_id)
+            ->where('status', 'pending')
+            ->exists();
+
+        if ($hasPendingTask) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Driver ini masih memiliki tugas aktif (pending)! Tidak boleh melakukan double assign.'
+            ], 422);
+        }
+
         $task = DriverTask::create([
             'admin_id' => Auth::id() ?? 1, // fallback to 1 if no auth (testing)
             'driver_id' => $request->driver_id,
@@ -60,6 +72,28 @@ class DriverTaskController extends Controller
         }
 
         return response()->json(['success' => true, 'message' => 'Tugas berhasil di-assign ke driver.']);
+    }
+
+    public function updateNote(Request $request, $id)
+    {
+        $request->validate([
+            'note' => 'required|string'
+        ]);
+
+        $task = DriverTask::findOrFail($id);
+        $task->update([
+            'note' => $request->note
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Catatan tugas berhasil diperbarui!']);
+    }
+
+    public function destroy($id)
+    {
+        $task = DriverTask::findOrFail($id);
+        $task->delete();
+
+        return redirect()->route('admin.tasks')->with('success', 'Tugas berhasil dihapus!');
     }
 
     public function complete($id)

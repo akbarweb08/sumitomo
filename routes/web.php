@@ -39,6 +39,18 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/mastersupplier/update', [\App\Http\Controllers\MasterSupplierController::class, 'update'])->name('mastersupplier.update');
     Route::delete('/mastersupplier/{id}', [\App\Http\Controllers\MasterSupplierController::class, 'destroy'])->name('mastersupplier.destroy');
 
+    // Master Lot Place
+    Route::get('/masterlotplace', [\App\Http\Controllers\MasterLotPlaceController::class, 'index'])->name('masterlotplace.index');
+    Route::post('/masterlotplace', [\App\Http\Controllers\MasterLotPlaceController::class, 'store'])->name('masterlotplace.store');
+    Route::post('/masterlotplace/update', [\App\Http\Controllers\MasterLotPlaceController::class, 'update'])->name('masterlotplace.update');
+    Route::delete('/masterlotplace/{id}', [\App\Http\Controllers\MasterLotPlaceController::class, 'destroy'])->name('masterlotplace.destroy');
+
+    // Master Lot Number
+    Route::get('/masterlotnumber', [\App\Http\Controllers\MasterLotNumberController::class, 'index'])->name('masterlotnumber.index');
+    Route::post('/masterlotnumber', [\App\Http\Controllers\MasterLotNumberController::class, 'store'])->name('masterlotnumber.store');
+    Route::post('/masterlotnumber/update', [\App\Http\Controllers\MasterLotNumberController::class, 'update'])->name('masterlotnumber.update');
+    Route::delete('/masterlotnumber/{id}', [\App\Http\Controllers\MasterLotNumberController::class, 'destroy'])->name('masterlotnumber.destroy');
+
     // Pallet Data
     Route::get('/datalist', [\App\Http\Controllers\DataListController::class, 'index'])->name('datalist.index');
     Route::get('/reporting', [\App\Http\Controllers\ReportingController::class, 'index'])->name('reporting.index');
@@ -63,6 +75,8 @@ Route::middleware(['auth'])->group(function () {
     // Driver Tasks
     Route::get('/tugas', [\App\Http\Controllers\DriverTaskController::class, 'index'])->name('tugas.index');
     Route::get('/admin/tasks', [\App\Http\Controllers\DriverTaskController::class, 'adminIndex'])->name('admin.tasks');
+    Route::post('/admin/tasks/{id}/update-note', [\App\Http\Controllers\DriverTaskController::class, 'updateNote'])->name('admin.tasks.updateNote');
+    Route::delete('/admin/tasks/{id}', [\App\Http\Controllers\DriverTaskController::class, 'destroy'])->name('admin.tasks.destroy');
     Route::get('/fetch-drivers', [\App\Http\Controllers\DriverTaskController::class, 'fetchDrivers'])->name('driver.fetch');
     Route::post('/assign-driver', [\App\Http\Controllers\DriverTaskController::class, 'assign'])->name('driver.assign');
     Route::post('/tugas/{id}/complete', [\App\Http\Controllers\DriverTaskController::class, 'complete'])->name('tugas.complete');
