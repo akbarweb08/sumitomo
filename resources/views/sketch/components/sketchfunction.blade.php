@@ -133,7 +133,8 @@
           <div class="modal-body">
             <div class="form-group mb-2">
               <label class="form-label mb-1">Lot Number</label>
-              <select class="form-select" id="inputLotNumber" name="LotNumber">
+              <input type="hidden" name="LotNumber" id="hiddenLotNumber" value="{{ $lotNumber ?? '' }}">
+              <select class="form-select" id="inputLotNumber" disabled>
                 @foreach($availableLotNumbers ?? [] as $ln)
                   <option value="{{ $ln }}" {{ ($lotNumber ?? '') == $ln ? 'selected' : '' }}>{{ $ln }}</option>
                 @endforeach
@@ -477,6 +478,7 @@
             $("#inputColorId").val(colId);
             $("#inputPalletNumber").val(splitted[3]);
             $("#inputLotNumber").val(lotNumber);
+            $("#hiddenLotNumber").val(lotNumber);
             $("#inputBoxNumber").val(splitted[4]);
             var optPref = $("#inputColorId option:selected").data('prefiks');
             if (optPref) {
@@ -487,6 +489,7 @@
             $("#inputColorId").val(1);
             $("#inputPalletNumber").val("");
             $("#inputLotNumber").val(lotNumber);
+            $("#hiddenLotNumber").val(lotNumber);
             $("#inputBoxNumber").val($(event).attr("data-boxnumber"));
             $("#inputScanPrefiks").val("");
         }
