@@ -131,23 +131,13 @@
         <form id="myFormId" method="POST" autocomplete="off">
           @csrf
           <div class="modal-body">
-            <div class="row">
-              <div class="col-md-6 mb-2">
-                <label class="form-label mb-1">Lot Place</label>
-                <select class="form-select" id="inputLotPlace" name="LotPlace">
-                  @foreach($availableLotPlaces ?? [] as $lp)
-                    <option value="{{ $lp }}" {{ ($lotPlace ?? '') == $lp ? 'selected' : '' }}>{{ $lp }}</option>
-                  @endforeach
-                </select>
-              </div>
-              <div class="col-md-6 mb-2">
-                <label class="form-label mb-1">Lot Number</label>
-                <select class="form-select" id="inputLotNumber" name="LotNumber">
-                  @foreach($availableLotNumbers ?? [] as $ln)
-                    <option value="{{ $ln }}" {{ ($lotNumber ?? '') == $ln ? 'selected' : '' }}>{{ $ln }}</option>
-                  @endforeach
-                </select>
-              </div>
+            <div class="form-group mb-2">
+              <label class="form-label mb-1">Lot Number</label>
+              <select class="form-select" id="inputLotNumber" name="LotNumber">
+                @foreach($availableLotNumbers ?? [] as $ln)
+                  <option value="{{ $ln }}" {{ ($lotNumber ?? '') == $ln ? 'selected' : '' }}>{{ $ln }}</option>
+                @endforeach
+              </select>
             </div>
             <div class="form-group mb-2">
               <input type="hidden" name="IdPallet" class="form-control" id="inputIdPallet">
@@ -488,9 +478,6 @@
             $("#inputPalletNumber").val(splitted[3]);
             $("#inputLotNumber").val(lotNumber);
             $("#inputBoxNumber").val(splitted[4]);
-            if (typeof lotPlace !== 'undefined' && lotPlace) {
-                $("#inputLotPlace").val(lotPlace);
-            }
             var optPref = $("#inputColorId option:selected").data('prefiks');
             if (optPref) {
                 $("#inputScanPrefiks").val(optPref);
@@ -501,9 +488,6 @@
             $("#inputPalletNumber").val("");
             $("#inputLotNumber").val(lotNumber);
             $("#inputBoxNumber").val($(event).attr("data-boxnumber"));
-            if (typeof lotPlace !== 'undefined' && lotPlace) {
-                $("#inputLotPlace").val(lotPlace);
-            }
             $("#inputScanPrefiks").val("");
         }
         $("#inputColorId option").show();

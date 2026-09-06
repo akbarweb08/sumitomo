@@ -15,9 +15,8 @@ class MasterDataController extends Controller
         $lot = session('permit');
         
         $query = Color::query()
-            ->select('colors.*', DB::raw("(SELECT COUNT(id) FROM pallets WHERE pallets.ColorId = colors.Id AND pallets.DateOut IS NULL AND pallets.PalletNumber != '') as total"))
             ->leftJoin('supply', 'colors.supply', '=', 'supply.id')
-            ->select('colors.*', 'supply.supplier as supply_name', DB::raw("(SELECT COUNT(id) FROM pallets WHERE pallets.ColorId = colors.Id AND pallets.DateOut IS NULL AND pallets.PalletNumber != '') as total"))
+            ->select('colors.*', 'supply.supplier as supply_name')
             ->where('colors.status', '!=', 'deleted');
 
         if ($lot == 'super') {
@@ -34,8 +33,8 @@ class MasterDataController extends Controller
 
         // For bottom table (not the lot)
         $queryOther = Color::query()
-            ->select('colors.*', 'supply.supplier as supply_name', DB::raw("(SELECT COUNT(id) FROM pallets WHERE pallets.ColorId = colors.Id AND pallets.DateOut IS NULL AND pallets.PalletNumber != '') as total"))
             ->leftJoin('supply', 'colors.supply', '=', 'supply.id')
+            ->select('colors.*', 'supply.supplier as supply_name')
             ->where('colors.status', '!=', 'deleted');
 
         if ($lot != 'super') {
@@ -64,7 +63,14 @@ class MasterDataController extends Controller
         }
         $supplies = $querySupply->orderBy('id', 'ASC')->get();
 
-        return view('masterdata.index', compact('colors', 'colorsOther', 'supplies', 'lot'));
+        // Prefiks dari Master Supplier
+        $supplierPrefixes = Supply::whereNotNull('prefix')
+            ->where('prefix', '!=', '')
+            ->select('prefix', 'supplier', 'id')
+            ->orderBy('prefix', 'ASC')
+            ->get();
+
+        return view('masterdata.index', compact('colors', 'colorsOther', 'supplies', 'lot', 'supplierPrefixes'));
     }
 
     public function store(Request $request)
@@ -75,6 +81,7 @@ class MasterDataController extends Controller
         $Supplier = $request->SupplyName;
         $ColorHex = $request->ColorHex;
         $ColorText = $request->ColorText;
+        $Total = $request->has('total') ? (int)$request->total : 0;
 
         if ($request->type == 'loc') {
             if (in_array($request->LotPlace, [243, 244, 245])) {
@@ -111,7 +118,8 @@ class MasterDataController extends Controller
             'ColorHex' => $ColorHex,
             'ColorText' => $ColorText,
             'status' => '',
-            'supply' => $Supplier
+            'supply' => $Supplier,
+            'total' => $Total
         ]);
 
         if ($request->ajax() || $request->wantsJson()) {
@@ -134,6 +142,7 @@ class MasterDataController extends Controller
         $ColorHex = $request->ColorHex;
         $ColorText = $request->ColorText;
         $Supplier = $request->supplyEdit;
+        $Total = $request->has('total') ? (int)$request->total : 0;
 
         $exists = Color::where('LotPlace', $LotPlace)
             ->where('InvoiceNumber', $InvoiceNumber)
@@ -145,14 +154,17 @@ class MasterDataController extends Controller
             return response()->json(['message' => 'Maaf data yang anda masukkan sama', 'status' => 'error']);
         }
 
-        Color::where('Id', $Id)->update([
+        $updateData = [
             'InvoiceNumber' => $InvoiceNumber,
             'ColorHex' => $ColorHex,
             'ColorText' => $ColorText,
             'Prefiks' => $Prefiks,
             'LotPlace' => $LotPlace,
-            'supply' => $Supplier
-        ]);
+            'supply' => $Supplier,
+            'total' => $Total
+        ];
+
+        Color::where('Id', $Id)->update($updateData);
 
         return response()->json(['message' => 'Berhasil', 'status' => 'success']);
     }

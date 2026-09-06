@@ -66,7 +66,7 @@
                                     <td>{{ $row->total }}</td>
                                     <td style="width:150px;">
                                         <button type="button" class="btn btn-primary btn-sm" 
-                                            data-colors="{{ $row->Id }};{{ $row->InvoiceNumber }};{{ $row->ColorHex }};{{ $row->ColorText }};{{ $row->LotPlace }};{{ $row->Prefiks }};{{ $row->supply }};" 
+                                            data-colors="{{ $row->Id }};{{ $row->InvoiceNumber }};{{ $row->ColorHex }};{{ $row->ColorText }};{{ $row->LotPlace }};{{ $row->Prefiks }};{{ $row->supply }};{{ $row->total }}" 
                                             onclick="toggleEditModal(this)">
                                             <i class="fas fa-edit"></i>
                                         </button>
@@ -100,7 +100,7 @@
                                     <td style="width:150px;">
                                         @if($lot == 'super')
                                         <button type="button" class="btn btn-primary btn-sm" 
-                                            data-colors="{{ $row->Id }};{{ $row->InvoiceNumber }};{{ $row->ColorHex }};{{ $row->ColorText }};{{ $row->LotPlace }};{{ $row->Prefiks }};{{ $row->supply }};" 
+                                            data-colors="{{ $row->Id }};{{ $row->InvoiceNumber }};{{ $row->ColorHex }};{{ $row->ColorText }};{{ $row->LotPlace }};{{ $row->Prefiks }};{{ $row->supply }};{{ $row->total }}" 
                                             onclick="toggleEditModal(this)">
                                             <i class="fas fa-edit"></i>
                                         </button>
@@ -137,12 +137,24 @@
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <input type="text" name="Prefiks" class="form-control" id="Prefiks" placeholder="Enter Prefiks, Ex: DA,DS,RA" autofocus required>
+                        <label class="form-label">Prefiks (Dari Master Supplier)</label>
+                        <select class="form-select" id="Prefiks" name="Prefiks" required>
+                            <option selected disabled value="">Choose Prefiks</option>
+                            @foreach($supplierPrefixes as $sp)
+                                <option value="{{ $sp->prefix }}" data-supply-id="{{ $sp->id }}">{{ $sp->prefix }} - {{ $sp->supplier }}</option>
+                            @endforeach
+                        </select>
                     </div>
                     <div class="mb-3">
+                        <label class="form-label">Invoice Number</label>
                         <input type="text" name="InvoiceNumber" class="form-control" id="InvoiceNumber" placeholder="Enter Invoice No" required>
                     </div>
                     <div class="mb-3">
+                        <label class="form-label">Total Pallet</label>
+                        <input type="number" name="total" class="form-control" id="total" placeholder="Enter Total Pallet" min="0" value="0" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Lot Number</label>
                         <select class="form-select" id="LotPlace" name="LotPlace" required>
                             <option selected disabled value="">Choose LotNumber</option>
                             @if(in_array(session('permit'), ['7', 'super']))
@@ -159,6 +171,7 @@
                         </select>
                     </div>
                     <div class="mb-3">
+                        <label class="form-label">Supplier</label>
                         <select class="form-select" id="SupplyName" name="SupplyName" required>
                             <option disabled value="">Choose Supplier</option>
                             @foreach($supplies as $supply)
@@ -197,15 +210,25 @@
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label>Prefiks</label>
-                        <input type="text" name="Prefiks" class="form-control" id="editPrefiks" autofocus required>
+                        <label class="form-label">Prefiks (Dari Master Supplier)</label>
+                        <select class="form-select" id="editPrefiks" name="Prefiks" required>
+                            <option selected disabled value="">Choose Prefiks</option>
+                            @foreach($supplierPrefixes as $sp)
+                                <option value="{{ $sp->prefix }}" data-supply-id="{{ $sp->id }}">{{ $sp->prefix }} - {{ $sp->supplier }}</option>
+                            @endforeach
+                        </select>
                     </div>
                     <div class="mb-3">
                         <input type="hidden" name="Id" id="editId">
-                        <label>Invoice Number</label>
+                        <label class="form-label">Invoice Number</label>
                         <input type="text" name="InvoiceNumber" class="form-control" id="editInvoiceNumber" required>
                     </div>
                     <div class="mb-3">
+                        <label class="form-label">Total Pallet</label>
+                        <input type="number" name="total" class="form-control" id="editTotal" placeholder="Enter Total Pallet" min="0" value="0" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Lot Number</label>
                         <select class="form-select" id="editLotPlace" name="LotPlace" required>
                             <option selected disabled value="">Choose LotNumber</option>
                             @if(in_array(session('permit'), ['7', 'super']))
@@ -223,6 +246,7 @@
                         </select>
                     </div>
                     <div class="mb-3">
+                        <label class="form-label">Supplier</label>
                         <select class="form-select" id="editSupply" name="supplyEdit" required>
                             <option disabled value="">Choose Supplier</option>
                             @foreach($supplies as $supply)
@@ -315,11 +339,33 @@
         $("#editColorHex").val(data[2]);
         $("#editColorText").val(data[3]);
         $("#editLotPlace").val(data[4]);
-        $("#editPrefiks").val(data[5]);
+
+        let prefVal = data[5] || '';
+        if (prefVal && $("#editPrefiks option[value='" + prefVal + "']").length === 0) {
+            $("#editPrefiks").append(new Option(prefVal, prefVal, true, true));
+        } else {
+            $("#editPrefiks").val(prefVal);
+        }
+
         $("#editSupply").val(data[6]);
+        $("#editTotal").val(data[7] !== undefined ? data[7] : 0);
         
         editModal.show();
     }
+
+    $('#Prefiks').on('change', function() {
+        let supId = $(this).find('option:selected').data('supply-id');
+        if (supId) {
+            $('#SupplyName').val(supId);
+        }
+    });
+
+    $('#editPrefiks').on('change', function() {
+        let supId = $(this).find('option:selected').data('supply-id');
+        if (supId) {
+            $('#editSupply').val(supId);
+        }
+    });
 
     function editData() {
         let data = $('#myFormId1').serialize();

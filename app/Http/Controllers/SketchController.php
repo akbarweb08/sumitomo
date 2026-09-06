@@ -72,7 +72,7 @@ class SketchController extends Controller
         }
         
         // Modal data: HAPUS ->where('colors.Id', '!=', 1) dan perbaiki filter status
-        $modalColors = Color::select('colors.*', DB::raw("(SELECT COUNT(id) FROM pallets WHERE pallets.ColorId = colors.Id AND pallets.DateOut IS NULL AND pallets.PalletNumber != '') as total"))
+        $modalColors = Color::select('colors.*')
             ->where(function($q) use ($lotPlace) {
                 if ($lotPlace == 'GRACE') {
                     $q->whereIn('colors.LotPlace', ['GRACE', '242', '243', '244', '245'])->orWhere('colors.LotPlace', '');
